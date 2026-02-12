@@ -20,7 +20,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 body {background-color:#0E1117;}
-h1,h2,h3 {color:white;}
+h1,h2,h3 {color:purple;}
 </style>
 """, unsafe_allow_html=True)
 
