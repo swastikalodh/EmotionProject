@@ -2,6 +2,10 @@ import streamlit as st
 import re
 import difflib
 import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
