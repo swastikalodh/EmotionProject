@@ -1,0 +1,70 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Emotion Detector</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 24px; background:#f6f7fb; color:#111; }
+    .card { max-width:700px; margin:40px auto; background:white; padding:20px; border-radius:12px; box-shadow: 0 6px 24px rgba(15,15,20,0.06); }
+    h1 { margin:0 0 12px 0; font-size:24px; }
+    textarea { width:100%; height:110px; padding:10px; font-size:16px; border-radius:8px; border:1px solid #e6e9ef; resize:vertical; }
+    button { background:#4f46e5; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; }
+    .result { margin-top:16px; padding:12px; background:#fafafa; border-radius:8px; border:1px solid #eee; }
+    .prob { font-family: monospace; margin-top:8px; color:#334155 }
+    footer { margin-top:18px; color:#6b7280; font-size:13px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Emotion Detector</h1>
+    <p>Type a sentence and click <strong>Detect</strong>.</p>
+    <textarea id="textIn" placeholder="e.g. I feel so happy today!"></textarea>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button id="detectBtn">Detect</button>
+      <button id="clearBtn" style="background:#e6e7ef; color:#111;">Clear</button>
+    </div>
+
+    <div class="result" id="result" style="display:none;">
+      <div><strong>Predicted Emotion:</strong> <span id="predLabel"></span></div>
+      <div id="probContainer" class="prob" style="display:none;"></div>
+    </div>
+
+    <footer>Backend: dictionary → VADER → LogisticRegression</footer>
+  </div>
+
+<script>
+document.getElementById("detectBtn").onclick = async () => {
+  let text = document.getElementById("textIn").value.trim();
+  if (!text) return alert("Type something first.");
+  const resp = await fetch("/api/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  document.getElementById("result").style.display = "block";
+  document.getElementById("predLabel").innerText = data.predicted;
+  if (data.probabilities) {
+    let out = "";
+    for (const [k,v] of Object.entries(data.probabilities)) {
+      out += `${k}: ${v}  `;
+    }
+    let probEl = document.getElementById("probContainer");
+    probEl.style.display = "block";
+    probEl.innerText = out;
+  } else {
+    document.getElementById("probContainer").style.display = "none";
+  }
+};
+
+document.getElementById("clearBtn").onclick = () => {
+  document.getElementById("textIn").value = "";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("probContainer").style.display = "none";
+};
+</script>
+</body>
+</html>
