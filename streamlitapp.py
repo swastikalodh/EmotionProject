@@ -81,19 +81,16 @@ def detect_emotion(text):
 
     non_zero = {k:v for k,v in scores.items() if v > 0}
 
-    # Case 1: One clear emotion → 100%
     if len(non_zero) == 1:
         emo = list(non_zero.keys())[0]
         return emo, {emo: 1.0}
 
-    # Case 2: Mixed emotions → split
     if len(non_zero) > 1:
         total = sum(non_zero.values())
         probs = {k: round(v/total, 2) for k,v in non_zero.items()}
         best = max(probs, key=probs.get)
         return best, probs
 
-    # Case 3: No keywords → sentiment fallback
     compound = sia.polarity_scores(text)["compound"]
     if compound >= 0:
         return "joy", {"joy": 1.0}
@@ -121,13 +118,32 @@ textarea {
     border-radius: 20px !important;
 }
 
-.stButton>button {
-    background: linear-gradient(90deg,#7c3aed,#a78bfa);
-    border-radius: 30px;
-    padding: 12px 30px;
-    font-size: 17px;
-    color: white;
-    border: none;
+/* Tarot Flip */
+.flip-card {
+    perspective:1000px;
+}
+.flip-inner {
+    position:relative;
+    transition: transform 1s;
+    transform-style:preserve-3d;
+}
+.flip-card.flipped .flip-inner {
+    transform: rotateY(180deg);
+}
+
+/* Animated Bars */
+.bar-container {
+    background:#1e1b4b;
+    border-radius:20px;
+    margin-bottom:8px;
+}
+.bar-fill {
+    height:20px;
+    border-radius:20px;
+    animation: growBar 1.5s ease forwards;
+}
+@keyframes growBar {
+    from { width:0%; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -151,18 +167,19 @@ if st.button("🔮 Reveal the Vibe"):
         emoji = EMO_EMOJI[emotion]
         confidence = max(probs.values())
 
-        # ---------------- DYNAMIC EFFECTS ----------------
+        pulse_speed = 6 - (confidence * 4)
+
+        # ⭐ Dynamic Effects
         st.markdown(f"""
         <style>
 
-        /* Pulsing stars */
         .stApp::before {{
             content:"";
             position:fixed;
             width:100%;
             height:100%;
             background: radial-gradient(circle, {color}22, transparent 70%);
-            animation: pulse {4 - confidence*2}s infinite alternate;
+            animation: pulse {pulse_speed}s infinite alternate;
             z-index:-1;
         }}
 
@@ -171,7 +188,6 @@ if st.button("🔮 Reveal the Vibe"):
             to {{ opacity:0.7; }}
         }}
 
-        /* Breathing aura */
         .block-container {{
             box-shadow: 0 0 40px {color};
             animation: breathe 3s ease-in-out infinite;
@@ -184,31 +200,33 @@ if st.button("🔮 Reveal the Vibe"):
             100% {{ box-shadow:0 0 30px {color}; }}
         }}
 
-        /* Moon brightness */
         .moon {{
             font-size:90px;
             text-align:center;
             filter: brightness({0.6 + confidence});
         }}
 
-        /* Tarot flip */
-        .card {{
-            perspective:1000px;
-        }}
-        .inner {{
-            transform: rotateY(180deg);
-            transition: 1s;
-        }}
-
         </style>
         """, unsafe_allow_html=True)
 
-        # ---------------- RESULT ----------------
+        # 🔮 Tarot Flip Reveal
+        st.markdown('<div class="flip-card flipped"><div class="flip-inner">', unsafe_allow_html=True)
+
         st.markdown(f'<div class="moon">{moon}</div>', unsafe_allow_html=True)
         st.subheader(f"{emoji} Dominant Vibe: **{emotion.upper()}**")
 
         st.markdown("### 🌌 Vibe Breakdown")
+
         for emo,val in probs.items():
-            st.write(f"{EMO_EMOJI[emo]} {emo.capitalize()} — {int(val*100)}%")
+            width = int(val*100)
+            st.markdown(f"""
+            <div class="bar-container">
+                <div class="bar-fill" style="width:{width}%; background:{color};"></div>
+            </div>
+            <small>{EMO_EMOJI[emo]} {emo.capitalize()} — {width}%</small>
+            """, unsafe_allow_html=True)
+
+        st.markdown('</div></div>', unsafe_allow_html=True)
 
         st.success("✨ Vibe successfully decoded by the cosmos.")
+        
