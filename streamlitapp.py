@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import re
 import nltk
 from deep_translator import GoogleTranslator
@@ -29,6 +28,15 @@ EMO_DICT = {
     "surprise": {"wow","unexpected","omg","shocked"}
 }
 
+EMO_EMOJI = {
+    "joy":"😊",
+    "anger":"😡",
+    "sadness":"😢",
+    "fear":"😨",
+    "disgust":"🤢",
+    "surprise":"😲"
+}
+
 EMO_COLOR = {
     "joy":"#facc15",
     "anger":"#ef4444",
@@ -38,13 +46,22 @@ EMO_COLOR = {
     "surprise":"#f472b6"
 }
 
-EMO_EMOJI = {
-    "joy":"😊",
-    "anger":"😡",
-    "sadness":"😢",
-    "fear":"😨",
-    "disgust":"🤢",
-    "surprise":"😲"
+EMO_MOON = {
+    "joy":"🌕",
+    "anger":"🌖",
+    "sadness":"🌑",
+    "fear":"🌘",
+    "disgust":"🌒",
+    "surprise":"🌔"
+}
+
+EMO_MUSIC = {
+    "joy":"https://cdn.pixabay.com/download/audio/2022/03/15/audio_2f8d0b0e1e.mp3",
+    "anger":"https://cdn.pixabay.com/download/audio/2021/09/15/audio_abc123.mp3",
+    "sadness":"https://cdn.pixabay.com/download/audio/2022/02/10/audio_def456.mp3",
+    "fear":"https://cdn.pixabay.com/download/audio/2021/10/05/audio_xyz789.mp3",
+    "disgust":"https://cdn.pixabay.com/download/audio/2021/08/01/audio_ghj111.mp3",
+    "surprise":"https://cdn.pixabay.com/download/audio/2021/09/10/audio_qwe222.mp3"
 }
 
 # ---------------- NLP ----------------
@@ -59,7 +76,7 @@ def detect_emotion(text):
     scores = {e:0 for e in EMO_DICT}
 
     for tok in tokens:
-        for emo,words in EMO_DICT.items():
+        for emo, words in EMO_DICT.items():
             if tok in words:
                 scores[emo]+=1
 
@@ -81,75 +98,39 @@ def detect_emotion(text):
     else:
         return "sadness",{"sadness":1.0}
 
-# ---------------- PARTICLE ENGINE ----------------
-components.html("""
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<div id="particles-js"></div>
-<script>
-particlesJS("particles-js", {
-  "particles": {
-    "number": {"value": 80},
-    "size": {"value": 2},
-    "move": {"speed": 0.8},
-    "line_linked": {"enable": true, "opacity": 0.2}
-  }
-});
-</script>
-<style>
-#particles-js {
- position:fixed;
- width:100%;
- height:100%;
- top:0;
- left:0;
- z-index:-1;
-}
-</style>
-""", height=0)
-
-# ---------------- BASE STYLE ----------------
+# ---------------- UI BASE ----------------
 st.markdown("""
 <style>
-.stApp { background:black; color:white; }
+.stApp {
+    background: black;
+    background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+    color:white;
+}
 
+/* rotating moon */
 .moon {
     font-size:90px;
     text-align:center;
-    animation: rotateMoon 25s linear infinite;
+    animation: rotateMoon 20s linear infinite;
 }
 @keyframes rotateMoon {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
-.bar-container {
-    background:#222;
-    border-radius:20px;
-    margin-bottom:10px;
-}
-.bar {
-    height:20px;
-    border-radius:20px;
-    animation: growBar 1.5s ease forwards;
-}
-@keyframes growBar {
-    from { width:0%; }
-}
-
-svg { width:100%; height:120px; }
-.star { fill:white; animation: twinkle 2s infinite alternate; }
-@keyframes twinkle {
-    from { opacity:0.4; }
-    to { opacity:1; }
+/* live aura while typing */
+textarea:focus {
+    box-shadow: 0 0 30px #a78bfa !important;
+    transition:0.3s;
 }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("# 🌌 Vibe Oracle ✨")
 
-# ---------------- FORM ----------------
-with st.form("vibe_form"):
-    user_text = st.text_area("Type your vibe (Press Enter)", height=150)
+# --------- FORM (ENTER KEY WORKS) ----------
+with st.form(key="vibe_form"):
+    user_text = st.text_area("Type your vibe here (Press Enter to reveal)", height=150)
     submitted = st.form_submit_button("🔮 Reveal")
 
 if submitted and user_text.strip():
@@ -158,47 +139,36 @@ if submitted and user_text.strip():
     emotion, probs = detect_emotion(translated)
 
     color = EMO_COLOR[emotion]
+    moon = EMO_MOON[emotion]
     emoji = EMO_EMOJI[emotion]
     confidence = max(probs.values())
 
-    # dynamic glow + moon brightness
+    # -------- dynamic constellation --------
+    constellation = "✨ ✦ ✧ ✨" if emotion=="joy" else \
+                    "✹ ✸ ✹" if emotion=="anger" else \
+                    "⋆ ⋆ ⋆" if emotion=="sadness" else \
+                    "✦ ✧ ✦" if emotion=="fear" else \
+                    "✧ ✧" if emotion=="disgust" else \
+                    "✶ ✷ ✶"
+
     st.markdown(f"""
     <style>
     .block-container {{
         box-shadow:0 0 60px {color};
         border-radius:20px;
     }}
-    .moon {{
-        filter: brightness({0.5 + confidence});
-    }}
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="moon">🌙</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="moon">{moon}</div>', unsafe_allow_html=True)
+
     st.markdown(f"## {emoji} Dominant Vibe: **{emotion.upper()}**")
-
-    # animated constellation
-    st.markdown("""
-    <svg viewBox="0 0 200 100">
-      <circle class="star" cx="30" cy="40" r="3"/>
-      <circle class="star" cx="80" cy="20" r="3"/>
-      <circle class="star" cx="130" cy="50" r="3"/>
-      <circle class="star" cx="170" cy="30" r="3"/>
-      <line x1="30" y1="40" x2="80" y2="20" stroke="white"/>
-      <line x1="80" y1="20" x2="130" y2="50" stroke="white"/>
-      <line x1="130" y1="50" x2="170" y2="30" stroke="white"/>
-    </svg>
-    """, unsafe_allow_html=True)
-
-    st.markdown("### 🌌 Vibe Breakdown")
+    st.markdown(f"### 🌌 Constellation: {constellation}")
 
     for emo,val in probs.items():
-        width=int(val*100)
-        st.markdown(f"""
-        <div class="bar-container">
-            <div class="bar" style="width:{width}%; background:{color};"></div>
-        </div>
-        <small>{emo.capitalize()} — {width}%</small>
-        """, unsafe_allow_html=True)
+        st.write(f"{EMO_EMOJI[emo]} {emo.capitalize()} — {int(val*100)}%")
 
-    st.success("✨ The cosmos has decoded your vibe.")
+    # emotion-based music
+    st.audio(EMO_MUSIC[emotion], autoplay=True)
+
+    st.success("✨ Cosmic vibe revealed.")
