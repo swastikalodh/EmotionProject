@@ -18,7 +18,8 @@ sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
 STOP_WORDS = set(stopwords.words("english"))
 
-# ---------------- EMOTION DATA ----------------
+# ---------------- EMOTION DICTIONARIES ----------------
+
 EMO_DICT = {
     "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
     "anger": {"angry","hate","furious","mad","annoyed"},
@@ -26,6 +27,14 @@ EMO_DICT = {
     "fear": {"scared","panic","terrified","afraid","nervous"},
     "disgust": {"gross","nasty","eww"},
     "surprise": {"wow","unexpected","omg","shocked"}
+}
+
+# Hinglish + Bengali detection
+MULTI_LANG_DICT = {
+    "joy": {"accha lag raha","bhalo lagche","khushi","maja lagche"},
+    "sadness": {"bhalo lagchena","accha nahi lag raha","dukhi","mon kharap"},
+    "anger": {"gussa","rag","ragi","pagol hoye gechi"},
+    "fear": {"dar lag raha","voy lagche","bhoy","darr"},
 }
 
 EMO_EMOJI = {
@@ -46,6 +55,15 @@ EMO_COLOR = {
     "surprise":"#f472b6"
 }
 
+EMO_MOON = {
+    "joy":"🌕",
+    "anger":"🌖",
+    "sadness":"🌑",
+    "fear":"🌘",
+    "disgust":"🌒",
+    "surprise":"🌔"
+}
+
 ALL_EMOTIONS = list(EMO_DICT.keys())
 
 # ---------------- NLP ----------------
@@ -58,11 +76,11 @@ def preprocess(text):
 def detect_emotion(text):
     text_lower = text.lower()
 
-    # --- Hinglish / Bengali shortcuts ---
-    if "bhalo lagchena" in text_lower:
-        return "sadness", {"sadness":1.0}
-    if "mujhe accha nahi lag raha" in text_lower:
-        return "sadness", {"sadness":1.0}
+    # Multi-language detection
+    for emo, phrases in MULTI_LANG_DICT.items():
+        for phrase in phrases:
+            if phrase in text_lower:
+                return emo, {emo:1.0}
 
     tokens = preprocess(text)
     scores = {e:0 for e in EMO_DICT}
@@ -101,23 +119,24 @@ st.markdown("""
 
 /* Bigger fonts */
 .title {
-    font-size:52px;
+    font-size:54px;
     text-align:center;
     font-weight:700;
 }
-.subtext {
-    font-size:20px;
+.subtitle {
+    font-size:22px;
     text-align:center;
+    margin-bottom:20px;
 }
 textarea {
-    font-size:18px !important;
+    font-size:20px !important;
 }
 
 /* Rotating Moon */
 .moon {
-    font-size:110px;
+    font-size:120px;
     text-align:center;
-    animation: rotateMoon 25s linear infinite;
+    animation: rotateMoon 30s linear infinite;
 }
 @keyframes rotateMoon {
     from { transform: rotate(0deg); }
@@ -131,7 +150,7 @@ textarea {
     margin-bottom:10px;
 }
 .bar-fill {
-    height:22px;
+    height:24px;
     border-radius:20px;
     transition: width 1.5s ease;
 }
@@ -139,10 +158,10 @@ textarea {
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="title">🌌 Vibe Oracle</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtext">Speak your vibe 🌙</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Speak your vibe 🌙</div>', unsafe_allow_html=True)
 
 # ---------------- INPUT ----------------
-text = st.text_area("", height=150)
+text = st.text_area("", height=160)
 
 if st.button("🔮 Reveal the Vibe"):
 
@@ -152,26 +171,38 @@ if st.button("🔮 Reveal the Vibe"):
         translated = GoogleTranslator(source='auto', target='en').translate(text)
         emotion, probs = detect_emotion(translated)
 
-        # Ensure ALL emotions shown
+        color = EMO_COLOR[emotion]
+        moon = EMO_MOON[emotion]
+        confidence = max(probs.values())
+
+        # Show all emotions including 0%
         full_probs = {emo:0.0 for emo in ALL_EMOTIONS}
         for k,v in probs.items():
-            full_probs[k] = v
+            full_probs[k]=v
 
-        confidence = max(full_probs.values())
+        # Dynamic aura glow
+        st.markdown(f"""
+        <style>
+        .block-container {{
+            box-shadow:0 0 80px {color};
+            border-radius:25px;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
-        st.markdown(f'<div class="moon">🌙</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="moon">{moon}</div>', unsafe_allow_html=True)
         st.markdown(f"## {EMO_EMOJI[emotion]} Dominant Vibe: **{emotion.upper()}**")
 
         st.markdown("### 🌌 Emotional Breakdown")
 
         for emo,val in full_probs.items():
-            percent = int(val*100)
+            percent=int(val*100)
 
-            # If 100% → cyan glow contrast
-            if percent == 100:
-                bar_color = "#00ffff"
+            # 100% highlight color
+            if percent==100:
+                bar_color="#00ffff"
             else:
-                bar_color = EMO_COLOR[emo]
+                bar_color=EMO_COLOR[emo]
 
             st.markdown(f"""
             <div class="bar-container">
