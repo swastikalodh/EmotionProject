@@ -7,7 +7,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Celestial Emotion Oracle", page_icon="🌙", layout="centered")
+st.set_page_config(page_title="🌌 Vibe Oracle", page_icon="🌙", layout="centered")
 
 # ---------------- NLTK ----------------
 nltk.download("stopwords")
@@ -17,35 +17,33 @@ nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
 STOP_WORDS = set(stopwords.words("english"))
-KEEP = {"not","no","very","never"}
-STOP_WORDS = STOP_WORDS.difference(KEEP)
 
-# ---------------- EMOTIONS ----------------
+# ---------------- EMOTION DATA ----------------
 EMO_DICT = {
     "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
-    "sadness": {"sad","cry","lonely","depressed","heartbroken"},
     "anger": {"angry","hate","furious","mad","annoyed"},
+    "sadness": {"sad","cry","lonely","depressed","heartbroken"},
     "fear": {"scared","panic","terrified","afraid","nervous"},
     "disgust": {"gross","nasty","eww"},
     "surprise": {"wow","unexpected","omg","shocked"}
 }
 
-EMOTION_AURA = {
-    "joy": "#ffd700",
-    "sadness": "#60a5fa",
-    "anger": "#ff3b3b",
-    "fear": "#a78bfa",
-    "disgust": "#22c55e",
-    "surprise": "#f472b6"
+EMO_COLOR = {
+    "joy":"#facc15",
+    "anger":"#ef4444",
+    "sadness":"#60a5fa",
+    "fear":"#a78bfa",
+    "disgust":"#22c55e",
+    "surprise":"#f472b6"
 }
 
-EMOTION_MOON = {
-    "joy": "🌕",
-    "sadness": "🌑",
-    "anger": "🌖",
-    "fear": "🌘",
-    "disgust": "🌒",
-    "surprise": "🌔"
+EMO_EMOJI = {
+    "joy":"😊",
+    "anger":"😡",
+    "sadness":"😢",
+    "fear":"😨",
+    "disgust":"🤢",
+    "surprise":"😲"
 }
 
 # ---------------- NLP ----------------
@@ -60,148 +58,160 @@ def detect_emotion(text):
     scores = {e:0 for e in EMO_DICT}
 
     for tok in tokens:
-        for emo, words in EMO_DICT.items():
+        for emo,words in EMO_DICT.items():
             if tok in words:
-                scores[emo] += 1
+                scores[emo]+=1
 
     non_zero = {k:v for k,v in scores.items() if v>0}
 
-    if len(non_zero) == 1:
-        emo = list(non_zero.keys())[0]
-        return emo, {emo:1.0}
+    if len(non_zero)==1:
+        emo=list(non_zero.keys())[0]
+        return emo,{emo:1.0}
 
-    if len(non_zero) > 1:
-        total = sum(non_zero.values())
-        probs = {k:round(v/total,2) for k,v in non_zero.items()}
-        best = max(probs, key=probs.get)
-        return best, probs
+    if len(non_zero)>1:
+        total=sum(non_zero.values())
+        probs={k:round(v/total,2) for k,v in non_zero.items()}
+        best=max(probs,key=probs.get)
+        return best,probs
 
-    compound = sia.polarity_scores(text)["compound"]
-    if compound >= 0:
-        return "joy", {"joy":1.0}
+    compound=sia.polarity_scores(text)["compound"]
+    if compound>=0:
+        return "joy",{"joy":1.0}
     else:
-        return "sadness", {"sadness":1.0}
+        return "sadness",{"sadness":1.0}
 
-# ---------------- BASE STYLE ----------------
+# ---------------- BASE UI STYLE ----------------
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(-45deg,#0f0c29,#302b63,#24243e);
-    background-size:400% 400%;
-    animation: gradientShift 20s ease infinite;
+    background:black;
     color:white;
 }
 
-@keyframes gradientShift {
-    0%{background-position:0% 50%;}
-    50%{background-position:100% 50%;}
-    100%{background-position:0% 50%;}
-}
-
+/* rotating moon */
 .moon {
     font-size:90px;
     text-align:center;
-    transition: all 1s ease;
+    animation: rotateMoon 30s linear infinite;
+}
+@keyframes rotateMoon {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
-.block-container {
-    border-radius:25px;
-    padding:2rem;
-    transition: all 1s ease;
+/* animated bar */
+.bar-container {
+    background:#222;
+    border-radius:20px;
+    margin-bottom:10px;
+}
+.bar {
+    height:20px;
+    border-radius:20px;
+    animation: growBar 1.5s ease forwards;
+}
+@keyframes growBar {
+    from { width:0%; }
 }
 
-/* Tarot Flip */
-.flip-card {
-    perspective:1000px;
+/* constellation svg animation */
+svg {
+    width:100%;
+    height:120px;
 }
-.flip-inner {
-    position:relative;
-    transition: transform 1s;
-    transform-style:preserve-3d;
+.star {
+    fill:white;
+    animation: twinkle 2s infinite alternate;
 }
-.flip-card.flipped .flip-inner {
-    transform: rotateY(180deg);
-}
-.flip-front, .flip-back {
-    backface-visibility:hidden;
-}
-.flip-back {
-    transform: rotateY(180deg);
+@keyframes twinkle {
+    from { opacity:0.4; }
+    to { opacity:1; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("## 🌙 Celestial Emotion Oracle ✨")
+# ---------------- PARTICLE ENGINE ----------------
+st.components.v1.html("""
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<div id="particles-js"></div>
+<script>
+particlesJS("particles-js", {
+  "particles": {
+    "number": {"value": 90},
+    "size": {"value": 2},
+    "move": {"speed": 0.8},
+    "line_linked": {"enable": true, "opacity": 0.2}
+  }
+});
+</script>
+<style>
+#particles-js {
+ position:fixed;
+ width:100%;
+ height:100%;
+ top:0;
+ left:0;
+ z-index:-1;
+}
+</style>
+""", height=0)
 
-# ---------------- INPUT ----------------
-text = st.text_area("Whisper your thoughts... (English / Hindi / Bengali supported)", height=150)
+st.markdown("# 🌌 Vibe Oracle ✨")
 
-if st.button("🔮 Reveal Emotion"):
+# ---------------- FORM ----------------
+with st.form("vibe_form"):
+    user_text = st.text_area("Type your vibe (Press Enter)", height=150)
+    submitted = st.form_submit_button("🔮 Reveal")
 
-    if not text.strip():
-        st.warning("The oracle awaits your words...")
-    else:
-        translated = GoogleTranslator(source='auto', target='en').translate(text)
-        emotion, probs = detect_emotion(translated)
+if submitted and user_text.strip():
 
-        aura_color = EMOTION_AURA[emotion]
-        moon_symbol = EMOTION_MOON[emotion]
-        confidence = max(probs.values())
+    translated = GoogleTranslator(source='auto', target='en').translate(user_text)
+    emotion, probs = detect_emotion(translated)
 
-        # ⭐ Pulsing stars based on confidence
-        pulse_speed = 6 - (confidence * 4)
+    color = EMO_COLOR[emotion]
+    emoji = EMO_EMOJI[emotion]
+    confidence = max(probs.values())
 
+    # gradual moon phase via brightness
+    moon_phase = 0.5 + confidence
+
+    st.markdown(f"""
+    <style>
+    .block-container {{
+        box-shadow:0 0 60px {color};
+        border-radius:20px;
+    }}
+    .moon {{
+        filter: brightness({moon_phase});
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f'<div class="moon">🌙</div>', unsafe_allow_html=True)
+    st.markdown(f"## {emoji} Dominant Vibe: **{emotion.upper()}**")
+
+    # SVG constellation
+    st.markdown("""
+    <svg viewBox="0 0 200 100">
+      <circle class="star" cx="30" cy="40" r="3"/>
+      <circle class="star" cx="80" cy="20" r="3"/>
+      <circle class="star" cx="130" cy="50" r="3"/>
+      <circle class="star" cx="170" cy="30" r="3"/>
+      <line x1="30" y1="40" x2="80" y2="20" stroke="white"/>
+      <line x1="80" y1="20" x2="130" y2="50" stroke="white"/>
+      <line x1="130" y1="50" x2="170" y2="30" stroke="white"/>
+    </svg>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 🌌 Vibe Breakdown")
+
+    for emo,val in probs.items():
+        width = int(val*100)
         st.markdown(f"""
-        <style>
-        .stApp::before {{
-            content:"";
-            position:fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            background:url("https://www.transparenttextures.com/patterns/stardust.png");
-            opacity:0.4;
-            animation: starPulse {pulse_speed}s ease-in-out infinite;
-            z-index:-1;
-        }}
-
-        @keyframes starPulse {{
-            0%{{opacity:0.2;}}
-            50%{{opacity:0.7;}}
-            100%{{opacity:0.2;}}
-        }}
-
-        .block-container {{
-            box-shadow:0 0 70px {aura_color};
-            animation: breathe 4s ease-in-out infinite;
-        }}
-
-        @keyframes breathe {{
-            0%{{box-shadow:0 0 30px {aura_color};}}
-            50%{{box-shadow:0 0 90px {aura_color};}}
-            100%{{box-shadow:0 0 30px {aura_color};}}
-        }}
-
-        .moon {{
-            filter: brightness({0.6 + confidence});
-        }}
-        </style>
+        <div class="bar-container">
+            <div class="bar" style="width:{width}%; background:{color};"></div>
+        </div>
+        <small>{emo.capitalize()} — {width}%</small>
         """, unsafe_allow_html=True)
 
-        # 🔮 Tarot Flip Reveal
-        st.markdown('<div class="flip-card flipped"><div class="flip-inner">', unsafe_allow_html=True)
-
-        st.markdown(f'<div class="moon">{moon_symbol}</div>', unsafe_allow_html=True)
-        st.subheader(f"✨ Dominant Emotion: {emotion.upper()}")
-
-        st.markdown("### 🌌 Emotional Aura Distribution")
-
-        for emo,val in probs.items():
-            percent = int(val*100)
-            st.progress(val)
-            st.write(f"{emo.capitalize()} — {percent}%")
-
-        st.markdown('</div></div>', unsafe_allow_html=True)
-
-        st.success("The stars have aligned with your emotion.")
+    st.success("✨ The cosmos has decoded your vibe.")
