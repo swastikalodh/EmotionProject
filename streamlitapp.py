@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import re
 import nltk
 from deep_translator import GoogleTranslator
@@ -80,64 +81,14 @@ def detect_emotion(text):
     else:
         return "sadness",{"sadness":1.0}
 
-# ---------------- BASE UI STYLE ----------------
-st.markdown("""
-<style>
-.stApp {
-    background:black;
-    color:white;
-}
-
-/* rotating moon */
-.moon {
-    font-size:90px;
-    text-align:center;
-    animation: rotateMoon 30s linear infinite;
-}
-@keyframes rotateMoon {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* animated bar */
-.bar-container {
-    background:#222;
-    border-radius:20px;
-    margin-bottom:10px;
-}
-.bar {
-    height:20px;
-    border-radius:20px;
-    animation: growBar 1.5s ease forwards;
-}
-@keyframes growBar {
-    from { width:0%; }
-}
-
-/* constellation svg animation */
-svg {
-    width:100%;
-    height:120px;
-}
-.star {
-    fill:white;
-    animation: twinkle 2s infinite alternate;
-}
-@keyframes twinkle {
-    from { opacity:0.4; }
-    to { opacity:1; }
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ---------------- PARTICLE ENGINE ----------------
-st.components.v1.html("""
+components.html("""
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <div id="particles-js"></div>
 <script>
 particlesJS("particles-js", {
   "particles": {
-    "number": {"value": 90},
+    "number": {"value": 80},
     "size": {"value": 2},
     "move": {"speed": 0.8},
     "line_linked": {"enable": true, "opacity": 0.2}
@@ -156,6 +107,44 @@ particlesJS("particles-js", {
 </style>
 """, height=0)
 
+# ---------------- BASE STYLE ----------------
+st.markdown("""
+<style>
+.stApp { background:black; color:white; }
+
+.moon {
+    font-size:90px;
+    text-align:center;
+    animation: rotateMoon 25s linear infinite;
+}
+@keyframes rotateMoon {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.bar-container {
+    background:#222;
+    border-radius:20px;
+    margin-bottom:10px;
+}
+.bar {
+    height:20px;
+    border-radius:20px;
+    animation: growBar 1.5s ease forwards;
+}
+@keyframes growBar {
+    from { width:0%; }
+}
+
+svg { width:100%; height:120px; }
+.star { fill:white; animation: twinkle 2s infinite alternate; }
+@keyframes twinkle {
+    from { opacity:0.4; }
+    to { opacity:1; }
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("# 🌌 Vibe Oracle ✨")
 
 # ---------------- FORM ----------------
@@ -172,9 +161,7 @@ if submitted and user_text.strip():
     emoji = EMO_EMOJI[emotion]
     confidence = max(probs.values())
 
-    # gradual moon phase via brightness
-    moon_phase = 0.5 + confidence
-
+    # dynamic glow + moon brightness
     st.markdown(f"""
     <style>
     .block-container {{
@@ -182,15 +169,15 @@ if submitted and user_text.strip():
         border-radius:20px;
     }}
     .moon {{
-        filter: brightness({moon_phase});
+        filter: brightness({0.5 + confidence});
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(f'<div class="moon">🌙</div>', unsafe_allow_html=True)
+    st.markdown('<div class="moon">🌙</div>', unsafe_allow_html=True)
     st.markdown(f"## {emoji} Dominant Vibe: **{emotion.upper()}**")
 
-    # SVG constellation
+    # animated constellation
     st.markdown("""
     <svg viewBox="0 0 200 100">
       <circle class="star" cx="30" cy="40" r="3"/>
@@ -206,7 +193,7 @@ if submitted and user_text.strip():
     st.markdown("### 🌌 Vibe Breakdown")
 
     for emo,val in probs.items():
-        width = int(val*100)
+        width=int(val*100)
         st.markdown(f"""
         <div class="bar-container">
             <div class="bar" style="width:{width}%; background:{color};"></div>
