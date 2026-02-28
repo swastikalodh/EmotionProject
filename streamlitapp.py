@@ -137,7 +137,7 @@ st.markdown("""
     font-weight:700;
 }
 .subtitle {
-    font-size:22px;
+    font-size:32px;
     text-align:center;
     margin-bottom:20px;
 }
@@ -183,7 +183,7 @@ st.markdown('<div class="title">🌌 Vibe Oracle</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Speak your vibe 🌙</div>', unsafe_allow_html=True)
 
 # ---------------- INPUT ----------------
-text = st.text_area("", height=160)
+text = st.text_area("", height=180)
 
 if st.button("🔮 Reveal the Vibe"):
 
