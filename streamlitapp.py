@@ -113,9 +113,13 @@ def detect_emotion(text):
 st.markdown("""
 <style>
 .stApp {
-    background:black;
-    background-image:url("https://media.giphy.com/media/heOKY8nrJUMfK/giphy.gif");
-    color:white;
+ background: black;
+    background-image: url("https://media.giphy.com/media/heOKY8nrJUMfK/giphy.gif");
+    background-size: cover;          /* makes it fill entire screen */
+    background-position: center;     /* centers the GIF */
+    background-repeat: no-repeat;    /* prevents tiling */
+    background-attachment: fixed;    /* keeps it fixed while scrolling */
+    color: white;
 }
 
 /* Bigger fonts */
