@@ -35,6 +35,7 @@ MULTI_LANG_DICT = {
     "sadness": {"bhalo lagchena","accha nahi lag raha","dukhi","mon kharap"},
     "anger": {"gussa","rag","ragi","pagol hoye gechi"},
     "fear": {"dar lag raha","voy lagche","bhoy","darr"},
+    "disgust": {"chii","pocha","ish","nosto"}
 }
 
 EMO_EMOJI = {
@@ -56,7 +57,7 @@ EMO_COLOR = {
 }
 
 EMO_MOON = {
-    "joy":"🌕",
+    "joy":"🌝",
     "anger":"🌖",
     "sadness":"🌑",
     "fear":"🌘",
