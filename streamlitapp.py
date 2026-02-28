@@ -70,7 +70,7 @@ def emotion_scores(text):
 
     non_zero = {k:v for k,v in scores.items() if v>0}
 
-    # Clear emotion → 100%
+    # Single clear emotion → 100%
     if len(non_zero) == 1:
         emo = list(non_zero.keys())[0]
         return emo, {emo:1.0}
@@ -82,7 +82,7 @@ def emotion_scores(text):
         best = max(probs, key=probs.get)
         return best, probs
 
-    # fallback using sentiment
+    # Sentiment fallback
     compound = sia.polarity_scores(text)["compound"]
     if compound >= 0:
         return "joy", {"joy":1.0}
@@ -100,10 +100,11 @@ moon_symbol = "🌙"
 st.markdown(f"""
 <style>
 
+/* Animated mystical gradient */
 .stApp {{
     background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
     background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    animation: gradientShift 18s ease infinite;
     color: #e2e8f0;
 }}
 
@@ -113,31 +114,43 @@ st.markdown(f"""
     100% {{background-position: 0% 50%;}}
 }}
 
+/* ⭐ Pulsating Star Layer */
 .stApp::before {{
     content:"";
     position:fixed;
+    top:0;
+    left:0;
     width:100%;
     height:100%;
     background:url("https://www.transparenttextures.com/patterns/stardust.png");
-    opacity:0.3;
+    opacity:0.35;
+    animation: starPulse 6s ease-in-out infinite;
     z-index:-1;
 }}
 
+@keyframes starPulse {{
+    0% {{ opacity:0.2; }}
+    50% {{ opacity:0.6; }}
+    100% {{ opacity:0.2; }}
+}}
+
+/* Glass mystical card */
 .block-container {{
     background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(18px);
     border-radius: 25px;
     padding: 2rem;
-    box-shadow: 0 0 40px {aura_color};
+    box-shadow: 0 0 50px {aura_color};
     animation: breathe 4s ease-in-out infinite;
 }}
 
 @keyframes breathe {{
-    0% {{ box-shadow:0 0 20px {aura_color}; }}
-    50% {{ box-shadow:0 0 60px {aura_color}; }}
-    100% {{ box-shadow:0 0 20px {aura_color}; }}
+    0% {{ box-shadow:0 0 25px {aura_color}; }}
+    50% {{ box-shadow:0 0 70px {aura_color}; }}
+    100% {{ box-shadow:0 0 25px {aura_color}; }}
 }}
 
+/* Floating moon */
 .moon {{
     font-size: 90px;
     text-align:center;
@@ -154,8 +167,9 @@ st.markdown(f"""
     text-align:center;
     font-size:45px;
     font-weight:700;
-}}
+}
 
+/* Animated emotion bars */
 .bar-container {{
     background:#1e1b4b;
     border-radius:20px;
@@ -195,7 +209,7 @@ if st.button("🔮 Reveal Emotion"):
             moon_symbol = EMOTION_MOON[emotion]
             confidence = max(probs.values())
 
-        # Dynamic aura + moon brightness
+        # Dynamic glow + moon brightness scaling
         st.markdown(f"""
         <style>
         .block-container {{
