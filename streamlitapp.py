@@ -1,25 +1,26 @@
 import streamlit as st
 import re
-import difflib
 import nltk
 from deep_translator import GoogleTranslator
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Celestial Emotion Oracle", page_icon="🌙", layout="centered")
 
+# ---------------- NLTK ----------------
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("vader_lexicon")
 
 sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
-
 STOP_WORDS = set(stopwords.words("english"))
 KEEP = {"not","no","very","never"}
 STOP_WORDS = STOP_WORDS.difference(KEEP)
 
+# ---------------- EMOTIONS ----------------
 EMO_DICT = {
     "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
     "sadness": {"sad","cry","lonely","depressed","heartbroken"},
@@ -47,22 +48,21 @@ EMOTION_MOON = {
     "surprise": "🌔"
 }
 
-ALL_WORDS = sorted(set().union(*EMO_DICT.values()))
-
+# ---------------- NLP ----------------
 def preprocess(text):
     text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
     tokens = text.split()
     return [lemmatizer.lemmatize(t) for t in tokens if t not in STOP_WORDS]
 
-def emotion_scores(text):
+def detect_emotion(text):
     tokens = preprocess(text)
     scores = {e:0 for e in EMO_DICT}
 
     for tok in tokens:
-        for emo,words in EMO_DICT.items():
+        for emo, words in EMO_DICT.items():
             if tok in words:
-                scores[emo]+=1
+                scores[emo] += 1
 
     non_zero = {k:v for k,v in scores.items() if v>0}
 
@@ -82,83 +82,58 @@ def emotion_scores(text):
     else:
         return "sadness", {"sadness":1.0}
 
-def predict(text):
-    return emotion_scores(text)
-
-aura_color = "#a78bfa"
-moon_symbol = "🌙"
-
-st.markdown(f"""
+# ---------------- BASE STYLE ----------------
+st.markdown("""
 <style>
+.stApp {
+    background: linear-gradient(-45deg,#0f0c29,#302b63,#24243e);
+    background-size:400% 400%;
+    animation: gradientShift 20s ease infinite;
+    color:white;
+}
 
-.stApp {{
-    background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
-    background-size: 400% 400%;
-    animation: gradientShift 18s ease infinite;
-    color: #e2e8f0;
-}}
+@keyframes gradientShift {
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
 
-@keyframes gradientShift {{
-    0% {{background-position: 0% 50%;}}
-    50% {{background-position: 100% 50%;}}
-    100% {{background-position: 0% 50%;}}
-}}
-
-.stApp::before {{
-    content:"";
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:url("https://www.transparenttextures.com/patterns/stardust.png");
-    opacity:0.35;
-    animation: starPulse 6s ease-in-out infinite;
-    z-index:-1;
-}}
-
-@keyframes starPulse {{
-    0% {{ opacity:0.2; }}
-    50% {{ opacity:0.6; }}
-    100% {{ opacity:0.2; }}
-}}
-
-.block-container {{
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(18px);
-    border-radius: 25px;
-    padding: 2rem;
-    box-shadow: 0 0 50px {aura_color};
-}}
-
-.moon {{
-    font-size: 90px;
+.moon {
+    font-size:90px;
     text-align:center;
-}}
+    transition: all 1s ease;
+}
 
-.title {{
-    text-align:center;
-    font-size:45px;
-    font-weight:700;
-}}
+.block-container {
+    border-radius:25px;
+    padding:2rem;
+    transition: all 1s ease;
+}
 
-.bar-container {{
-    background:#1e1b4b;
-    border-radius:20px;
-    margin-bottom:8px;
-}}
-
-.bar-fill {{
-    height:20px;
-    border-radius:20px;
-}}
-
+/* Tarot Flip */
+.flip-card {
+    perspective:1000px;
+}
+.flip-inner {
+    position:relative;
+    transition: transform 1s;
+    transform-style:preserve-3d;
+}
+.flip-card.flipped .flip-inner {
+    transform: rotateY(180deg);
+}
+.flip-front, .flip-back {
+    backface-visibility:hidden;
+}
+.flip-back {
+    transform: rotateY(180deg);
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="title">🌙 Celestial Emotion Oracle ✨</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="moon">{moon_symbol}</div>', unsafe_allow_html=True)
+st.markdown("## 🌙 Celestial Emotion Oracle ✨")
 
+# ---------------- INPUT ----------------
 text = st.text_area("Whisper your thoughts... (English / Hindi / Bengali supported)", height=150)
 
 if st.button("🔮 Reveal Emotion"):
@@ -167,22 +142,55 @@ if st.button("🔮 Reveal Emotion"):
         st.warning("The oracle awaits your words...")
     else:
         translated = GoogleTranslator(source='auto', target='en').translate(text)
-        emotion, probs = predict(translated)
+        emotion, probs = detect_emotion(translated)
 
         aura_color = EMOTION_AURA[emotion]
         moon_symbol = EMOTION_MOON[emotion]
         confidence = max(probs.values())
 
+        # ⭐ Pulsing stars based on confidence
+        pulse_speed = 6 - (confidence * 4)
+
         st.markdown(f"""
         <style>
+        .stApp::before {{
+            content:"";
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:url("https://www.transparenttextures.com/patterns/stardust.png");
+            opacity:0.4;
+            animation: starPulse {pulse_speed}s ease-in-out infinite;
+            z-index:-1;
+        }}
+
+        @keyframes starPulse {{
+            0%{{opacity:0.2;}}
+            50%{{opacity:0.7;}}
+            100%{{opacity:0.2;}}
+        }}
+
         .block-container {{
             box-shadow:0 0 70px {aura_color};
+            animation: breathe 4s ease-in-out infinite;
         }}
+
+        @keyframes breathe {{
+            0%{{box-shadow:0 0 30px {aura_color};}}
+            50%{{box-shadow:0 0 90px {aura_color};}}
+            100%{{box-shadow:0 0 30px {aura_color};}}
+        }}
+
         .moon {{
             filter: brightness({0.6 + confidence});
         }}
         </style>
         """, unsafe_allow_html=True)
+
+        # 🔮 Tarot Flip Reveal
+        st.markdown('<div class="flip-card flipped"><div class="flip-inner">', unsafe_allow_html=True)
 
         st.markdown(f'<div class="moon">{moon_symbol}</div>', unsafe_allow_html=True)
         st.subheader(f"✨ Dominant Emotion: {emotion.upper()}")
@@ -190,12 +198,10 @@ if st.button("🔮 Reveal Emotion"):
         st.markdown("### 🌌 Emotional Aura Distribution")
 
         for emo,val in probs.items():
-            width = int(val*100)
-            st.markdown(f"""
-            <div class="bar-container">
-                <div class="bar-fill" style="width:{width}%; background:{aura_color};"></div>
-            </div>
-            <small>{emo.capitalize()} — {width}%</small>
-            """, unsafe_allow_html=True)
+            percent = int(val*100)
+            st.progress(val)
+            st.write(f"{emo.capitalize()} — {percent}%")
 
-        st.success("The moon has shifted with your soul.")
+        st.markdown('</div></div>', unsafe_allow_html=True)
+
+        st.success("The stars have aligned with your emotion.")
