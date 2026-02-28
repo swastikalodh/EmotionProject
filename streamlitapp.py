@@ -114,7 +114,7 @@ st.markdown("""
 <style>
 .stApp {
     background:black;
-    background-image:url("https://www.transparenttextures.com/patterns/stardust.png");
+    background-image:url("https://media.giphy.com/media/heOKY8nrJUMfK/giphy.gif");
     color:white;
 }
 
@@ -127,10 +127,10 @@ st.markdown("""
 .subtitle {
     font-size:22px;
     text-align:center;
-    margin-bottom:20px;
+    margin-bottom:30px;
 }
 textarea {
-    font-size:20px !important;
+    font-size:30px !important;
 }
 
 /* Rotating Moon */
