@@ -8,25 +8,32 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="✨ Vibe Reader ✨", page_icon="🌌", layout="centered")
+st.set_page_config(
+    page_title="🌌 Vibe Oracle",
+    page_icon="🌙",
+    layout="centered"
+)
 
-# ---------------- NLTK ----------------
+# ---------------- NLTK SETUP ----------------
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("vader_lexicon")
 
 sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
+
 STOP_WORDS = set(stopwords.words("english"))
+KEEP = {"not","no","never","very"}
+STOP_WORDS = STOP_WORDS.difference(KEEP)
 
 # ---------------- EMOTION DATA ----------------
 EMO_DICT = {
-    "joy": {"happy","love","awesome","great","amazing","smile"},
-    "anger": {"hate","angry","furious","mad","annoyed"},
-    "sadness": {"sad","cry","lonely","depressed"},
-    "fear": {"scared","afraid","panic","terrified"},
+    "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
+    "anger": {"angry","hate","furious","mad","annoyed"},
+    "sadness": {"sad","cry","lonely","depressed","heartbroken"},
+    "fear": {"scared","panic","terrified","afraid","nervous"},
     "disgust": {"gross","nasty","eww"},
-    "surprise": {"wow","unexpected","omg"}
+    "surprise": {"wow","unexpected","omg","shocked"}
 }
 
 EMO_EMOJI = {
@@ -56,8 +63,6 @@ EMO_MOON = {
     "surprise":"🌔"
 }
 
-ALL_WORDS = sorted(set().union(*EMO_DICT.values()))
-
 # ---------------- NLP ----------------
 def preprocess(text):
     text = text.lower()
@@ -65,135 +70,145 @@ def preprocess(text):
     tokens = text.split()
     return [lemmatizer.lemmatize(t) for t in tokens if t not in STOP_WORDS]
 
-def emotion_scores(text):
+def detect_emotion(text):
     tokens = preprocess(text)
     scores = {e:0 for e in EMO_DICT}
 
     for tok in tokens:
-        for emo,words in EMO_DICT.items():
+        for emo, words in EMO_DICT.items():
             if tok in words:
-                scores[emo]+=1
+                scores[emo] += 1
 
-    # If only one emotion appears → 100%
-    non_zero = [k for k,v in scores.items() if v>0]
+    non_zero = {k:v for k,v in scores.items() if v > 0}
 
+    # Case 1: One clear emotion → 100%
     if len(non_zero) == 1:
-        return non_zero[0], {non_zero[0]:1.0}
+        emo = list(non_zero.keys())[0]
+        return emo, {emo: 1.0}
 
-    # Mixed emotions
-    total = sum(scores.values())
-    if total == 0:
-        # fallback using sentiment
-        compound = sia.polarity_scores(text)["compound"]
-        if compound > 0:
-            return "joy", {"joy":1.0}
-        else:
-            return "sadness", {"sadness":1.0}
+    # Case 2: Mixed emotions → split
+    if len(non_zero) > 1:
+        total = sum(non_zero.values())
+        probs = {k: round(v/total, 2) for k,v in non_zero.items()}
+        best = max(probs, key=probs.get)
+        return best, probs
 
-    probs = {k:round(v/total,2) for k,v in scores.items() if v>0}
-    best = max(probs, key=probs.get)
-    return best, probs
+    # Case 3: No keywords → sentiment fallback
+    compound = sia.polarity_scores(text)["compound"]
+    if compound >= 0:
+        return "joy", {"joy": 1.0}
+    else:
+        return "sadness", {"sadness": 1.0}
 
-# ---------------- UI ----------------
-text = st.text_area("✨ Drop your vibe here (Hindi / Bengali / English works)", height=150)
+# ---------------- UI BASE STYLE ----------------
+st.markdown("""
+<style>
+.stApp {
+    background: black;
+    background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+    color: #e5e7eb;
+}
 
-if st.button("🔮 Reveal The Vibe"):
+.title {
+    text-align:center;
+    font-size:46px;
+    font-weight:700;
+}
+
+textarea {
+    background: rgba(20,20,40,0.7) !important;
+    color: white !important;
+    border-radius: 20px !important;
+}
+
+.stButton>button {
+    background: linear-gradient(90deg,#7c3aed,#a78bfa);
+    border-radius: 30px;
+    padding: 12px 30px;
+    font-size: 17px;
+    color: white;
+    border: none;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="title">🌌 Vibe Oracle ✨</div>', unsafe_allow_html=True)
+st.caption("Drop a thought. Let the universe read your vibe.")
+
+# ---------------- INPUT ----------------
+text = st.text_area("✨ Speak your vibe (English / Hindi / Bengali)", height=150)
+
+if st.button("🔮 Reveal the Vibe"):
 
     if not text.strip():
-        st.warning("Say something dramatic at least 😌")
+        st.warning("Say *something*… the stars are listening 👀")
     else:
-
         translated = GoogleTranslator(source='auto', target='en').translate(text)
-        emotion, probs = emotion_scores(translated)
+        emotion, probs = detect_emotion(translated)
 
         color = EMO_COLOR[emotion]
         moon = EMO_MOON[emotion]
         emoji = EMO_EMOJI[emotion]
-        confidence = list(probs.values())[0] if len(probs)==1 else max(probs.values())
+        confidence = max(probs.values())
 
-        # ---------------- DYNAMIC COSMIC UI ----------------
+        # ---------------- DYNAMIC EFFECTS ----------------
         st.markdown(f"""
         <style>
-        .stApp {{
-            background: black;
-            overflow:hidden;
-        }}
 
-        /* Star Field */
-        .stars {{
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background: url("https://www.transparenttextures.com/patterns/stardust.png");
-            animation: pulseStars {5 - confidence*3}s infinite alternate;
-            opacity:{0.3 + confidence*0.5};
+        /* Pulsing stars */
+        .stApp::before {{
+            content:"";
+            position:fixed;
+            width:100%;
+            height:100%;
+            background: radial-gradient(circle, {color}22, transparent 70%);
+            animation: pulse {4 - confidence*2}s infinite alternate;
             z-index:-1;
         }}
 
-        @keyframes pulseStars {{
-            from {{ opacity:0.2; }}
-            to {{ opacity:0.6; }}
+        @keyframes pulse {{
+            from {{ opacity:0.3; }}
+            to {{ opacity:0.7; }}
         }}
 
-        /* Breathing Aura */
-        .aura {{
-            box-shadow: 0 0 60px {color};
+        /* Breathing aura */
+        .block-container {{
+            box-shadow: 0 0 40px {color};
             animation: breathe 3s ease-in-out infinite;
-            border-radius:20px;
-            padding:20px;
+            border-radius:25px;
         }}
 
         @keyframes breathe {{
-            0% {{ box-shadow:0 0 40px {color}; }}
+            0% {{ box-shadow:0 0 30px {color}; }}
             50% {{ box-shadow:0 0 80px {color}; }}
-            100% {{ box-shadow:0 0 40px {color}; }}
-        }}
-
-        /* Tarot Flip */
-        .flip-card {{
-            perspective: 1000px;
-        }}
-
-        .flip-inner {{
-            position: relative;
-            width: 100%;
-            text-align: center;
-            transition: transform 1s;
-            transform-style: preserve-3d;
-            transform: rotateY(180deg);
-        }}
-
-        .flip-front, .flip-back {{
-            backface-visibility: hidden;
-            position:absolute;
-            width:100%;
-        }}
-
-        .flip-back {{
-            transform: rotateY(180deg);
+            100% {{ box-shadow:0 0 30px {color}; }}
         }}
 
         /* Moon brightness */
         .moon {{
-            font-size:80px;
-            filter: brightness({0.7 + confidence});
+            font-size:90px;
+            text-align:center;
+            filter: brightness({0.6 + confidence});
         }}
-        </style>
 
-        <div class="stars"></div>
+        /* Tarot flip */
+        .card {{
+            perspective:1000px;
+        }}
+        .inner {{
+            transform: rotateY(180deg);
+            transition: 1s;
+        }}
+
+        </style>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="aura">', unsafe_allow_html=True)
-
+        # ---------------- RESULT ----------------
         st.markdown(f'<div class="moon">{moon}</div>', unsafe_allow_html=True)
+        st.subheader(f"{emoji} Dominant Vibe: **{emotion.upper()}**")
 
-        st.markdown(f"## {emoji} Dominant Vibe: **{emotion.upper()}**")
-
-        st.markdown("### 🎴 Cosmic Breakdown")
-
+        st.markdown("### 🌌 Vibe Breakdown")
         for emo,val in probs.items():
             st.write(f"{EMO_EMOJI[emo]} {emo.capitalize()} — {int(val*100)}%")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.success("✨ The universe has delivered your vibe.")
+        st.success("✨ Vibe successfully decoded by the cosmos.")
