@@ -7,7 +7,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="🌌 Emotion Detection", page_icon="🌙", layout="centered")
+st.set_page_config(page_title="🌌 Vibe Oracle", page_icon="🌙", layout="centered")
 
 # ---------------- NLTK ----------------
 nltk.download("stopwords")
