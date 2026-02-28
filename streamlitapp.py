@@ -7,10 +7,8 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Celestial Emotion Oracle", page_icon="🌙", layout="centered")
 
-# ---------------- NLTK SETUP ----------------
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("vader_lexicon")
@@ -22,7 +20,6 @@ STOP_WORDS = set(stopwords.words("english"))
 KEEP = {"not","no","very","never"}
 STOP_WORDS = STOP_WORDS.difference(KEEP)
 
-# ---------------- EMOTION SETTINGS ----------------
 EMO_DICT = {
     "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
     "sadness": {"sad","cry","lonely","depressed","heartbroken"},
@@ -52,7 +49,6 @@ EMOTION_MOON = {
 
 ALL_WORDS = sorted(set().union(*EMO_DICT.values()))
 
-# ---------------- NLP ----------------
 def preprocess(text):
     text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
@@ -70,19 +66,16 @@ def emotion_scores(text):
 
     non_zero = {k:v for k,v in scores.items() if v>0}
 
-    # Single clear emotion → 100%
     if len(non_zero) == 1:
         emo = list(non_zero.keys())[0]
         return emo, {emo:1.0}
 
-    # Mixed emotions
     if len(non_zero) > 1:
         total = sum(non_zero.values())
         probs = {k:round(v/total,2) for k,v in non_zero.items()}
         best = max(probs, key=probs.get)
         return best, probs
 
-    # Sentiment fallback
     compound = sia.polarity_scores(text)["compound"]
     if compound >= 0:
         return "joy", {"joy":1.0}
@@ -92,15 +85,12 @@ def emotion_scores(text):
 def predict(text):
     return emotion_scores(text)
 
-# ---------------- DEFAULT THEME ----------------
 aura_color = "#a78bfa"
 moon_symbol = "🌙"
 
-# ---------------- UI STYLE ----------------
 st.markdown(f"""
 <style>
 
-/* Animated mystical gradient */
 .stApp {{
     background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
     background-size: 400% 400%;
@@ -114,7 +104,6 @@ st.markdown(f"""
     100% {{background-position: 0% 50%;}}
 }}
 
-/* ⭐ Pulsating Star Layer */
 .stApp::before {{
     content:"";
     position:fixed;
@@ -134,42 +123,25 @@ st.markdown(f"""
     100% {{ opacity:0.2; }}
 }}
 
-/* Glass mystical card */
 .block-container {{
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(18px);
     border-radius: 25px;
     padding: 2rem;
     box-shadow: 0 0 50px {aura_color};
-    animation: breathe 4s ease-in-out infinite;
 }}
 
-@keyframes breathe {{
-    0% {{ box-shadow:0 0 25px {aura_color}; }}
-    50% {{ box-shadow:0 0 70px {aura_color}; }}
-    100% {{ box-shadow:0 0 25px {aura_color}; }}
-}}
-
-/* Floating moon */
 .moon {{
     font-size: 90px;
     text-align:center;
-    animation: floatMoon 6s ease-in-out infinite;
-}}
-
-@keyframes floatMoon {{
-    0% {{ transform: translateY(0px); }}
-    50% {{ transform: translateY(-12px); }}
-    100% {{ transform: translateY(0px); }}
 }}
 
 .title {{
     text-align:center;
     font-size:45px;
     font-weight:700;
-}
+}}
 
-/* Animated emotion bars */
 .bar-container {{
     background:#1e1b4b;
     border-radius:20px;
@@ -179,11 +151,6 @@ st.markdown(f"""
 .bar-fill {{
     height:20px;
     border-radius:20px;
-    animation: growBar 1.5s ease forwards;
-}}
-
-@keyframes growBar {{
-    from {{ width:0%; }}
 }}
 
 </style>
@@ -192,7 +159,6 @@ st.markdown(f"""
 st.markdown('<div class="title">🌙 Celestial Emotion Oracle ✨</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="moon">{moon_symbol}</div>', unsafe_allow_html=True)
 
-# ---------------- INPUT ----------------
 text = st.text_area("Whisper your thoughts... (English / Hindi / Bengali supported)", height=150)
 
 if st.button("🔮 Reveal Emotion"):
@@ -200,16 +166,13 @@ if st.button("🔮 Reveal Emotion"):
     if not text.strip():
         st.warning("The oracle awaits your words...")
     else:
-        with st.spinner("Reading celestial vibrations..."):
+        translated = GoogleTranslator(source='auto', target='en').translate(text)
+        emotion, probs = predict(translated)
 
-            translated = GoogleTranslator(source='auto', target='en').translate(text)
-            emotion, probs = predict(translated)
+        aura_color = EMOTION_AURA[emotion]
+        moon_symbol = EMOTION_MOON[emotion]
+        confidence = max(probs.values())
 
-            aura_color = EMOTION_AURA[emotion]
-            moon_symbol = EMOTION_MOON[emotion]
-            confidence = max(probs.values())
-
-        # Dynamic glow + moon brightness scaling
         st.markdown(f"""
         <style>
         .block-container {{
@@ -222,7 +185,6 @@ if st.button("🔮 Reveal Emotion"):
         """, unsafe_allow_html=True)
 
         st.markdown(f'<div class="moon">{moon_symbol}</div>', unsafe_allow_html=True)
-
         st.subheader(f"✨ Dominant Emotion: {emotion.upper()}")
 
         st.markdown("### 🌌 Emotional Aura Distribution")
