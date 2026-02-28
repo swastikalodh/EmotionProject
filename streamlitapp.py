@@ -2,27 +2,71 @@ import streamlit as st
 import re
 import difflib
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-nltk.download('vader_lexicon')
+import pandas as pd
+from googletrans import Translator
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# ---------------- SET PROFESSIONAL THEME ----------------
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Emotion Detector",
+    page_title="AI Emotion Analyzer",
     page_icon="🧠",
     layout="centered"
 )
 
+# ---------------- CSS DESIGN ----------------
 st.markdown("""
 <style>
-body {background-color:#0E1117;}
-h1,h2,h3 {color:purple;}
+
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+}
+
+.main-title {
+    text-align:center;
+    font-size:42px;
+    font-weight:bold;
+    color:#BB86FC;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.subtitle {
+    text-align:center;
+    color:#cccccc;
+    margin-bottom:30px;
+}
+
+textarea {
+    border-radius:15px !important;
+    background-color:#1e1e2f !important;
+    color:white !important;
+}
+
+.stButton>button {
+    background: linear-gradient(90deg,#8e2de2,#4a00e0);
+    color:white;
+    border-radius:20px;
+    padding:10px 25px;
+    font-size:16px;
+    transition:0.3s;
+}
+
+.stButton>button:hover {
+    transform:scale(1.05);
+    background: linear-gradient(90deg,#4a00e0,#8e2de2);
+}
+
+@keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
+}
+
 </style>
 """, unsafe_allow_html=True)
+
+st.markdown('<div class="main-title">✨ AI Emotion Analyzer ✨</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Multilingual • Animated • Intelligent</div>', unsafe_allow_html=True)
 
 # ---------------- DOWNLOAD NLTK ----------------
 nltk.download("stopwords")
@@ -31,6 +75,7 @@ nltk.download("vader_lexicon")
 
 sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
+translator = Translator()
 
 STOP_WORDS = set(stopwords.words("english"))
 KEEP = {"not","no","very","never"}
@@ -49,12 +94,22 @@ EMO_DICT = {
 EMO_EMOJI = {
     "joy":"😊","sadness":"😢","anger":"😠",
     "fear":"😨","disgust":"🤢","surprise":"😲",
-    "neutral":"😐"
+    "neutral":"🤖"
+}
+
+EMO_GIF = {
+    "joy":"assets/happy.gif",
+    "sadness":"assets/sad.gif",
+    "anger":"assets/angry.gif",
+    "fear":"assets/fear.gif",
+    "disgust":"assets/disgust.gif",
+    "surprise":"assets/surprise.gif",
+    "neutral":"assets/robot.gif"
 }
 
 ALL_WORDS = sorted(set().union(*EMO_DICT.values()))
 
-# ---------------- NLP ----------------
+# ---------------- NLP FUNCTIONS ----------------
 
 def preprocess(text):
     text = text.lower()
@@ -83,7 +138,6 @@ def emotion_scores(text):
 
     total = sum(scores.values())+0.0001
     probs = {k:round(v/total,2) for k,v in scores.items()}
-
     return probs
 
 def vader_predict(text):
@@ -107,27 +161,51 @@ def predict(text):
 
 # ---------------- UI ----------------
 
-st.title("🧠 Emotion Detection System")
-st.caption("Professional AI Emotion Analyzer")
+language = st.selectbox(
+    "🌍 Choose Input Language",
+    ["English", "Hindi", "Bengali"]
+)
 
-text = st.text_area("Enter your text", height=120)
+text = st.text_area("✍ Enter your text", height=120)
 
-if st.button("Analyze Emotion"):
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+if st.button("🔍 Analyze Emotion"):
 
     if not text.strip():
         st.warning("Please type something")
-
     else:
-        emotion, probs = predict(text)
+        with st.spinner("Analyzing emotions... 🤖"):
+            
+            # Translate if needed
+            if language != "English":
+                translated = translator.translate(text, dest="en")
+                text = translated.text
+                st.info(f"Translated to English: {text}")
+
+            emotion, probs = predict(text)
+            st.session_state.history.append(emotion)
 
         st.subheader(f"{EMO_EMOJI.get(emotion)} Detected Emotion: **{emotion.upper()}**")
 
-        st.divider()
+        # Show GIF reaction
+        gif_path = EMO_GIF.get(emotion)
+        if gif_path:
+            st.image(gif_path, width=250)
 
+        st.divider()
         st.markdown("### 📊 Confidence Levels")
 
         for emo,val in probs.items():
             st.write(f"{emo.capitalize()} — {int(val*100)}%")
             st.progress(val)
 
-        st.success("Analysis complete ✔️")
+        st.success("✨ Analysis Complete!")
+
+# ---------------- HISTORY CHART ----------------
+if st.session_state.history:
+    st.divider()
+    st.markdown("### 📈 Emotion History")
+    df = pd.DataFrame(st.session_state.history, columns=["Emotion"])
+    st.bar_chart(df["Emotion"].value_counts())
