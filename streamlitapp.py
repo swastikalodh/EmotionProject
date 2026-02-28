@@ -18,8 +18,7 @@ sia = SentimentIntensityAnalyzer()
 lemmatizer = WordNetLemmatizer()
 STOP_WORDS = set(stopwords.words("english"))
 
-# ---------------- EMOTION DICTIONARIES ----------------
-
+# ---------------- EMOTION DATA ----------------
 EMO_DICT = {
     "joy": {"happy","love","awesome","amazing","great","fantastic","smile"},
     "anger": {"angry","hate","furious","mad","annoyed"},
@@ -29,13 +28,12 @@ EMO_DICT = {
     "surprise": {"wow","unexpected","omg","shocked"}
 }
 
-# Hinglish + Bengali detection
+# Hinglish + Bengali phrases
 MULTI_LANG_DICT = {
     "joy": {"accha lag raha","bhalo lagche","khushi","maja lagche"},
     "sadness": {"bhalo lagchena","accha nahi lag raha","dukhi","mon kharap"},
-    "anger": {"gussa","rag","ragi","pagol hoye gechi"},
-    "fear": {"dar lag raha","voy lagche","bhoy","darr"},
-    "disgust": {"chii","pocha","ish","nosto"}
+    "anger": {"gussa","rag","ragi"},
+    "fear": {"dar lag raha","voy lagche","bhoy"}
 }
 
 EMO_EMOJI = {
@@ -57,12 +55,22 @@ EMO_COLOR = {
 }
 
 EMO_MOON = {
-    "joy":"🌝",
+    "joy":"🌕",
     "anger":"🌖",
     "sadness":"🌑",
     "fear":"🌘",
     "disgust":"🌒",
     "surprise":"🌔"
+}
+
+# 🧚 Emotion Fairy
+EMO_FAIRY = {
+    "joy":"🧚‍♀️✨",
+    "anger":"🧚‍♂️🔥",
+    "sadness":"🧚‍♀️💙",
+    "fear":"🧚‍♂️🌫",
+    "disgust":"🧚‍♀️🧪",
+    "surprise":"🧚‍♂️🌟"
 }
 
 ALL_EMOTIONS = list(EMO_DICT.keys())
@@ -113,13 +121,13 @@ def detect_emotion(text):
 st.markdown("""
 <style>
 .stApp {
- background: black;
-    background-image: url("https://media.giphy.com/media/heOKY8nrJUMfK/giphy.gif");
-    background-size: cover;          /* makes it fill entire screen */
-    background-position: center;     /* centers the GIF */
-    background-repeat: no-repeat;    /* prevents tiling */
-    background-attachment: fixed;    /* keeps it fixed while scrolling */
-    color: white;
+    background:black;
+    background-image:url("https://media.giphy.com/media/heOKY8nrJUMfK/giphy.gif");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    color:white;
 }
 
 /* Bigger fonts */
@@ -131,10 +139,19 @@ st.markdown("""
 .subtitle {
     font-size:22px;
     text-align:center;
-    margin-bottom:30px;
+    margin-bottom:20px;
 }
-textarea {
-    font-size:30px !important;
+
+/* Fairy header */
+.fairy {
+    font-size:70px;
+    text-align:center;
+    animation: float 4s ease-in-out infinite;
+}
+@keyframes float {
+    0%{transform:translateY(0px);}
+    50%{transform:translateY(-12px);}
+    100%{transform:translateY(0px);}
 }
 
 /* Rotating Moon */
@@ -178,14 +195,14 @@ if st.button("🔮 Reveal the Vibe"):
 
         color = EMO_COLOR[emotion]
         moon = EMO_MOON[emotion]
-        confidence = max(probs.values())
+        fairy = EMO_FAIRY[emotion]
 
         # Show all emotions including 0%
         full_probs = {emo:0.0 for emo in ALL_EMOTIONS}
         for k,v in probs.items():
             full_probs[k]=v
 
-        # Dynamic aura glow
+        # Aura glow
         st.markdown(f"""
         <style>
         .block-container {{
@@ -195,6 +212,9 @@ if st.button("🔮 Reveal the Vibe"):
         </style>
         """, unsafe_allow_html=True)
 
+        # 🧚 Fairy at Top
+        st.markdown(f'<div class="fairy">{fairy}</div>', unsafe_allow_html=True)
+
         st.markdown(f'<div class="moon">{moon}</div>', unsafe_allow_html=True)
         st.markdown(f"## {EMO_EMOJI[emotion]} Dominant Vibe: **{emotion.upper()}**")
 
@@ -203,7 +223,6 @@ if st.button("🔮 Reveal the Vibe"):
         for emo,val in full_probs.items():
             percent=int(val*100)
 
-            # 100% highlight color
             if percent==100:
                 bar_color="#00ffff"
             else:
@@ -216,4 +235,4 @@ if st.button("🔮 Reveal the Vibe"):
             <small>{EMO_EMOJI[emo]} {emo.capitalize()} — {percent}%</small>
             """, unsafe_allow_html=True)
 
-        st.success("✨ Cosmic vibe decoded.")
+        st.success("✨ Cosmic vibe decoded by the fairy.")
