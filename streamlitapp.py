@@ -1,20 +1,22 @@
 """
-🌌 Vibe Oracle v2 — ULTRA MAGICAL COSMIC EDITION
+🔮 SOUL PRISM — Emotion Alchemy Engine v3
+Completely new design: canvas particles, pipe connections, dreamy palette shifts
 Requirements: pip install streamlit nltk deep-translator
-Then run: streamlit run vibe_oracle.py
+Run: streamlit run vibe_oracle.py
 """
 
 import streamlit as st
 import re
+import json
 
 st.set_page_config(
-    page_title="🌌 Vibe Oracle",
+    page_title="🔮 Soul Prism",
     page_icon="🔮",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
-# ── NLP imports ───────────────────────────────────────────────────────────────
+# ── NLP ───────────────────────────────────────────────────────────────────────
 try:
     import nltk
     from nltk.corpus import stopwords
@@ -24,957 +26,691 @@ try:
                       ("vader_lexicon","sentiment/vader_lexicon"),("punkt","tokenizers/punkt")]:
         try: nltk.data.find(path)
         except LookupError: nltk.download(pkg, quiet=True)
-    _lemmatizer = WordNetLemmatizer()
-    _stop_words  = set(stopwords.words("english"))
-    _sia         = SentimentIntensityAnalyzer()
-    NLP_OK = True
-except Exception:
-    NLP_OK = False
+    _L = WordNetLemmatizer(); _SW = set(stopwords.words("english"))
+    _SIA = SentimentIntensityAnalyzer(); NLP_OK = True
+except: NLP_OK = False
 
-# ── Hex helper (defined early) ─────────────────────────────────────────────────
-def rgb(h):
-    h = h.strip().lstrip('#')
-    if len(h) == 3: h = h[0]*2 + h[1]*2 + h[2]*2
-    return f"{int(h[0:2],16)},{int(h[2:4],16)},{int(h[4:6],16)}"
-
-# ── Emotion Data ──────────────────────────────────────────────────────────────
 EMOTIONS = {
-    "joy": {
-        "emoji":"✨","color":"#FFD700","color2":"#FF8C00","glow":"#FFD700",
-        "moon":"🌕","fairy":"🧚‍♀️","crystal":"🟡","aura":"Golden Solar Aura","rune":"ᚷ",
-        "bg_from":"#1a1000","bg_to":"#0d0800",
-        "particles":["⭐","✨","💫","🌟","☀️","🌈","💛","🎊","🎉","🌻"],
-        "message":"The cosmos SINGS through you! Your radiance bends starlight itself. Even black holes lean closer to bask in your glow ✨",
-    },
-    "anger": {
-        "emoji":"🔥","color":"#FF4500","color2":"#FF0000","glow":"#FF4500",
-        "moon":"🌑","fairy":"🐉","crystal":"🔴","aura":"Crimson Dragon Aura","rune":"ᚦ",
-        "bg_from":"#1a0000","bg_to":"#0d0000",
-        "particles":["🔥","⚡","💢","🌋","☄️","💥","🔴","⚔️","🌪️","💣"],
-        "message":"VOLCANIC POWER courses through your veins! The universe trembles at your passion. Forge galaxies from this sacred fire 🔥",
-    },
-    "sadness": {
-        "emoji":"🌊","color":"#4169E1","color2":"#00BFFF","glow":"#4169E1",
-        "moon":"🌒","fairy":"🧜‍♀️","crystal":"🔵","aura":"Midnight Ocean Aura","rune":"ᛚ",
-        "bg_from":"#000d2a","bg_to":"#00061a",
-        "particles":["💧","🌊","🌧️","❄️","🌫️","💙","🫧","🌀","🩵","🌙"],
-        "message":"Even the ocean weeps silver tears, and it covers 71% of the Earth. Your depth of feeling IS the universe knowing itself 🌊",
-    },
-    "fear": {
-        "emoji":"🌑","color":"#9400D3","color2":"#FF00FF","glow":"#9400D3",
-        "moon":"🌘","fairy":"🦇","crystal":"🟣","aura":"Shadow Mystic Aura","rune":"ᚾ",
-        "bg_from":"#130020","bg_to":"#0a0015",
-        "particles":["👁️","🌀","💜","🕯️","🌑","🕸️","🦋","⚗️","🔮","🌙"],
-        "message":"The void stares back — and it BLINKS first. Every star was born from darkness. You are becoming something magnificent 🔮",
-    },
-    "disgust": {
-        "emoji":"🍃","color":"#00FF88","color2":"#228B22","glow":"#00FF88",
-        "moon":"🌓","fairy":"🧝‍♀️","crystal":"🟢","aura":"Ancient Forest Aura","rune":"ᛃ",
-        "bg_from":"#001500","bg_to":"#000d00",
-        "particles":["🍃","🌿","💚","🌱","🦋","🌺","🍀","🌳","✨","🐍"],
-        "message":"Your sacred NO is as powerful as any YES. The cosmos bows to those who know their own truth. You are untameable 🌿",
-    },
-    "surprise": {
-        "emoji":"🌠","color":"#FF69B4","color2":"#FF1493","glow":"#FF69B4",
-        "moon":"🌟","fairy":"🧞‍♀️","crystal":"🩷","aura":"Stardust Supernova Aura","rune":"ᛇ",
-        "bg_from":"#200015","bg_to":"#14000e",
-        "particles":["🌠","💥","🎆","🎇","✨","🌸","🎊","💖","⚡","🌈"],
-        "message":"THE UNIVERSE JUST WINKED AT YOU! Reality bent its own rules to deliver this moment. You exist at the intersection of magic ⚡",
-    },
+    "joy":     {"colors":["#FFE100","#FF8C00","#FF3CAC","#784BA0"],"label":"JOY",     "sym":"☀","desc":"Radiant. Electric. Alive."},
+    "anger":   {"colors":["#FF0040","#FF4500","#FF9500","#FFE000"],"label":"RAGE",    "sym":"⚡","desc":"Volcanic. Fierce. Unstoppable."},
+    "sadness": {"colors":["#0055FF","#0099FF","#00E5FF","#A0F0FF"],"label":"SORROW",  "sym":"◎","desc":"Deep. Vast. Oceanic."},
+    "fear":    {"colors":["#6600FF","#AA00FF","#FF00CC","#FF0055"],"label":"DREAD",   "sym":"◉","desc":"Shadowed. Trembling. Raw."},
+    "disgust": {"colors":["#00FF66","#00FFCC","#00CCFF","#0066FF"],"label":"REVULSION","sym":"❋","desc":"Sharp. Knowing. Untamed."},
+    "surprise":{"colors":["#FF00FF","#FF0099","#FF6600","#FFFF00"],"label":"WONDER",  "sym":"★","desc":"Impossible. Blazing. Infinite."},
 }
 
-MULTILINGUAL_PHRASES = {
-    "खुश":"joy","खुशी":"joy","प्यार":"joy","आनंद":"joy",
-    "गुस्सा":"anger","क्रोध":"anger","नफ़रत":"anger",
-    "दुख":"sadness","उदास":"sadness","रोना":"sadness",
-    "डर":"fear","भय":"fear","घबराहट":"fear",
-    "घृणा":"disgust","नापसंद":"disgust",
-    "अचरज":"surprise","हैरान":"surprise",
-    "আনন্দ":"joy","খুশি":"joy","ভালোবাসা":"joy",
-    "রাগ":"anger","ক্রোধ":"anger",
-    "দুঃখ":"sadness","কান্না":"sadness",
-    "ভয়":"fear","আতঙ্ক":"fear",
-    "ঘৃণা":"disgust",
-    "আশ্চর্য":"surprise","বিস্মিত":"surprise",
+KEYWORDS = {
+    "joy":["happy","happiness","joy","love","elated","cheerful","excited","wonderful","amazing","great","awesome","bliss","delight","thrilled","ecstatic","glad","smile","celebrate","fun","enjoy","grateful","euphoric","radiant","gleeful","overjoyed","beautiful","divine","bright","warm","peaceful","blessed","lucky","free","alive","glow","light","hope","wonderful","fantastic"],
+    "anger":["angry","anger","furious","rage","mad","irritated","annoyed","frustrated","hate","outraged","livid","enraged","hostile","bitter","resentful","infuriated","irate","seething","fuming","explosive","violent","scream","yell","fed","unfair","disgusting","terrible","horrible","worst","awful","sick","cannot","unacceptable"],
+    "sadness":["sad","unhappy","depressed","grief","sorrow","cry","crying","lonely","heartbroken","miserable","gloomy","melancholy","hopeless","devastated","despair","broken","lost","empty","numb","miss","alone","dark","pain","hurt","weep","abandoned","forgotten","invisible","tears","mourn","ache"],
+    "fear":["afraid","fear","scared","frightened","terrified","anxious","panic","worried","nervous","dread","horror","terror","uneasy","paranoid","trembling","horrified","petrified","alarmed","nightmare","danger","trapped","helpless","overwhelm","shaking","tense","threat"],
+    "disgust":["disgusted","disgust","gross","revolting","repulsed","nauseated","sick","nasty","vile","loathe","offensive","foul","rotten","toxic","unbearable","hideous","awful","dreadful","corrupt","yuck","eww"],
+    "surprise":["surprised","shocked","astonished","amazed","stunned","startled","unexpected","unbelievable","wow","whoa","incredible","astounded","speechless","bewildered","dazzled","impossible","never","omg","wait","unreal","mindblowing","extraordinary","unbelievable","cannot believe"],
 }
 
-ENGLISH_KEYWORDS = {
-    "joy":["happy","happiness","joy","joyful","love","loving","elated","cheerful","excited","wonderful","fantastic","amazing","great","awesome","bliss","blissful","delight","delighted","thrilled","ecstatic","glad","pleased","content","laugh","laughing","smile","smiling","celebrate","celebration","fun","enjoy","enjoying","grateful","gratitude","euphoric","jubilant","radiant","gleeful","overjoyed","beautiful","lovely","divine","perfect","bright","sunshine","warm","peaceful","blessed","lucky","hopeful","light","free"],
-    "anger":["angry","anger","furious","rage","mad","irritated","annoyed","frustrated","hate","hatred","outraged","livid","enraged","hostile","bitter","resentful","agitated","infuriated","irate","wrathful","seething","fuming","explosive","violent","temper","scream","yell","aggressive","awful","terrible","horrible","worst","disgusting","fed up","sick of","enough","cannot","unfair"],
-    "sadness":["sad","sadness","unhappy","depressed","depression","grief","sorrow","cry","crying","tears","lonely","loneliness","heartbroken","miserable","gloomy","melancholy","hopeless","devastated","despair","mourning","wretched","forlorn","somber","sorrowful","distressed","broken","lost","empty","numb","miss","missing","gone","alone","dark","pain","hurt","ache","weep","abandoned","forgotten","invisible"],
-    "fear":["afraid","fear","scared","frightened","terrified","anxious","anxiety","panic","worried","nervous","dread","phobia","horror","terror","uneasy","apprehensive","paranoid","timid","trembling","horrified","petrified","shaken","alarmed","creepy","nightmare","shadow","danger","threat","unsafe","vulnerable","trapped","helpless","overwhelming","cannot breathe","shaking"],
-    "disgust":["disgusted","disgust","gross","revolting","repulsed","nauseated","sick","yuck","eww","nasty","vile","repellent","abhorrent","loathe","loathing","offensive","foul","putrid","repugnant","despise","horrible","awful","dreadful","hideous","stench","rotten","corrupt","toxic","unbearable","cannot stand","unacceptable"],
-    "surprise":["surprised","surprise","shocked","astonished","amazed","stunned","startled","unexpected","unbelievable","wow","whoa","incredible","mindblowing","astounded","dumbfounded","speechless","bewildered","flabbergasted","dazzled","sudden","impossible","never","cant believe","holy","omg","wait","what","really","seriously","unreal","no way","just found","just heard","just saw"],
+MULTILINGUAL = {
+    "खुश":"joy","खुशी":"joy","प्यार":"joy","आनंद":"joy","गुस्सा":"anger","क्रोध":"anger",
+    "दुख":"sadness","उदास":"sadness","डर":"fear","भय":"fear","घृणा":"disgust","अचरज":"surprise",
+    "আনন্দ":"joy","খুশি":"joy","রাগ":"anger","দুঃখ":"sadness","ভয়":"fear","ঘৃণা":"disgust","আশ্চর্য":"surprise",
 }
 
-# ── NLP ────────────────────────────────────────────────────────────────────────
-def preprocess(text):
-    text = text.lower()
-    text = re.sub(r"[^\w\s]", " ", text)
-    tokens = text.split()
+def detect(text):
+    scores = {e:0 for e in EMOTIONS}
+    for phrase, em in MULTILINGUAL.items():
+        if phrase in text: scores[em] += 2
+    raw = text.lower()
+    raw = re.sub(r"[^\w\s]"," ", raw)
+    tokens = raw.split()
     if NLP_OK:
-        tokens = [t for t in tokens if t not in _stop_words]
-        tokens = [_lemmatizer.lemmatize(t) for t in tokens]
-    return tokens
-
-def detect_emotion(raw_text):
-    scores = {e: 0 for e in EMOTIONS}
-    for phrase, emotion in MULTILINGUAL_PHRASES.items():
-        if phrase in raw_text:
-            scores[emotion] += 2
-    tokens = preprocess(raw_text)
-    for emotion, keywords in ENGLISH_KEYWORDS.items():
-        for token in tokens:
-            if token in keywords:
-                scores[emotion] += 1
+        tokens = [_L.lemmatize(w) for w in tokens if w not in _SW]
+    for em, kws in KEYWORDS.items():
+        for tok in tokens:
+            if tok in kws: scores[em] += 1
     total = sum(scores.values())
     if total == 0:
-        if NLP_OK:
-            compound = _sia.polarity_scores(raw_text)["compound"]
-        else:
-            pos = sum(1 for t in tokens if t in ENGLISH_KEYWORDS["joy"]+ENGLISH_KEYWORDS["surprise"])
-            neg = sum(1 for t in tokens if t in ENGLISH_KEYWORDS["sadness"]+ENGLISH_KEYWORDS["anger"]+ENGLISH_KEYWORDS["fear"])
-            compound = (pos - neg) / max(len(tokens), 1)
-        if   compound >= 0.05: scores["joy"]     = 1
-        elif compound <= -0.05: scores["sadness"] = 1
-        else: scores["surprise"] = 0.5; scores["joy"] = 0.5
+        comp = _SIA.polarity_scores(text)["compound"] if NLP_OK else 0
+        if   comp >= 0.05:  scores["joy"]     = 1
+        elif comp <= -0.05: scores["sadness"]  = 1
+        else:               scores["surprise"] = 1
         total = sum(scores.values())
     if total == 0: scores["surprise"] = 1; total = 1
-    return {e: round(v/total*100, 1) for e,v in scores.items()}
+    return {e: round(v/total*100,1) for e,v in scores.items()}
 
-def dominant_emotion(probs):
-    return max(probs, key=probs.get)
+def dominant(probs): return max(probs, key=probs.get)
 
-# ── CSS ENGINE ────────────────────────────────────────────────────────────────
-def inject_css(ed=None):
-    c  = ed["color"]    if ed else "#b04aff"
-    c2 = ed["color2"]   if ed else "#6af0ff"
-    gl = ed["glow"]     if ed else "#b04aff"
-    bf = ed["bg_from"]  if ed else "#0d0020"
-    bt = ed["bg_to"]    if ed else "#06000f"
 
-    r1, r2, r3 = rgb(c), rgb(c2), rgb(gl)
+# ── RENDER ────────────────────────────────────────────────────────────────────
+def main():
+    probs = st.session_state.get("probs")
+    dom   = st.session_state.get("dom")
 
-    st.markdown(f"""
+    # Build result JSON for JS
+    result_json = "null"
+    if probs and dom:
+        ed = EMOTIONS[dom]
+        spectrum = []
+        for e, pct in sorted(probs.items(), key=lambda x:-x[1]):
+            ed2 = EMOTIONS[e]
+            spectrum.append({"label":ed2["label"],"sym":ed2["sym"],"pct":pct,"colors":ed2["colors"]})
+        result_json = json.dumps({
+            "dom": dom,
+            "label": ed["label"],
+            "sym": ed["sym"],
+            "desc": ed["desc"],
+            "colors": ed["colors"],
+            "spectrum": spectrum,
+        })
+
+    # Streamlit form (will be styled/hidden by CSS, but functional)
+    with st.form("soul_form", clear_on_submit=False):
+        text = st.text_area("soul", key="soul_text",
+            placeholder="Pour your soul here… the stars are listening",
+            height=1, label_visibility="collapsed")
+        submitted = st.form_submit_button("DECODE")
+
+    if submitted:
+        raw = st.session_state.get("soul_text","").strip()
+        if raw:
+            with st.spinner(""):
+                p = detect(raw)
+            d = dominant(p)
+            st.session_state["probs"] = p
+            st.session_state["dom"]   = d
+            st.rerun()
+        else:
+            st.session_state["show_warn"] = True
+
+    show_warn = st.session_state.pop("show_warn", False)
+
+    # ── THE ENTIRE VISUAL EXPERIENCE ──
+    st.markdown(build_html(result_json, show_warn), unsafe_allow_html=True)
+
+
+def build_html(result_json: str, show_warn: bool) -> str:
+    warn_class = "show" if show_warn else ""
+    return f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:ital@0;1&display=swap');
-
-/* ── HIDE STREAMLIT CHROME ── */
+/* ── RESET & HIDE STREAMLIT ── */
 #MainMenu,footer,header,[data-testid="stToolbar"],[data-testid="stDecoration"],
-[data-testid="stDeployButton"],.stDeployButton,[data-testid="stStatusWidget"],
-.viewerBadge_container__1QSob {{ display:none!important; }}
+[data-testid="stDeployButton"],.stDeployButton,[data-testid="stStatusWidget"]
+{{ display:none!important; }}
 [data-testid="stAppViewContainer"]>.main {{ padding:0!important; }}
 section.main>.block-container {{ padding:0!important; max-width:100%!important; }}
-
-/* ── BODY ── */
 html,body,[data-testid="stAppViewContainer"] {{
-    background:#000008!important;
-    min-height:100vh;
-    overflow-x:hidden;
+    background:#000!important; overflow:hidden!important;
+    height:100vh!important; width:100vw!important;
 }}
+[data-testid="stVerticalBlock"] {{ gap:0!important; }}
 
-/* ── ANIMATED NEBULA ── */
-[data-testid="stAppViewContainer"]::before {{
-    content:'';
-    position:fixed;
-    inset:0;
-    background:
-        radial-gradient(ellipse 90% 70% at 15% 5%,  #1f0040 0%, transparent 55%),
-        radial-gradient(ellipse 70% 90% at 85% 95%, #001f40 0%, transparent 55%),
-        radial-gradient(ellipse 60% 60% at 50% 50%, rgba({r1},0.08) 0%, transparent 65%),
-        radial-gradient(ellipse 40% 40% at 70% 20%, #200010 0%, transparent 50%),
-        radial-gradient(ellipse 50% 50% at 30% 80%, #001510 0%, transparent 50%),
-        #000008;
-    animation: nebulaFlow 18s ease-in-out infinite alternate;
-    z-index:0;
-    pointer-events:none;
-    transition: background 2s ease;
+/* ── HIDE STREAMLIT FORM VISUALLY BUT KEEP FUNCTIONAL ── */
+[data-testid="stForm"] {{
+    position:fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 99999 !important;
+    width: min(720px, 94vw) !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 0 32px 0 !important;
+    pointer-events: auto !important;
 }}
-@keyframes nebulaFlow {{
-    0%   {{ filter:hue-rotate(0deg)   brightness(1)    saturate(1.3); }}
-    33%  {{ filter:hue-rotate(30deg)  brightness(1.15) saturate(1.6); }}
-    66%  {{ filter:hue-rotate(-20deg) brightness(0.92) saturate(1.0); }}
-    100% {{ filter:hue-rotate(50deg)  brightness(1.1)  saturate(1.5); }}
+[data-testid="stTextArea"] {{
+    position:fixed !important;
+    bottom:130px !important;
+    left:50% !important;
+    transform:translateX(-50%) !important;
+    z-index:99999 !important;
+    width:min(720px,94vw) !important;
 }}
-
-/* ── NOISE GRAIN ── */
-[data-testid="stAppViewContainer"]::after {{
-    content:'';
-    position:fixed;
-    inset:0;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-    opacity:.4;
-    pointer-events:none;
-    z-index:1;
-    animation:grain 0.4s steps(2) infinite;
-}}
-@keyframes grain {{
-    0%  {{transform:translate(0,0);}}
-    25% {{transform:translate(-2px,1px);}}
-    50% {{transform:translate(1px,-2px);}}
-    75% {{transform:translate(-1px,2px);}}
-    100%{{transform:translate(0,0);}}
-}}
-
-/* ── STAR FIELD (JS-generated) ── */
-.star-canvas {{ position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden; }}
-.star {{
-    position:absolute;
-    border-radius:50%;
-    background:white;
-    animation:twinkle var(--dur,3s) ease-in-out infinite var(--del,0s);
-}}
-@keyframes twinkle {{
-    0%,100% {{opacity:.15;transform:scale(1);}}
-    50%     {{opacity:1; transform:scale(1.6);}}
-}}
-
-/* ── SHOOTING STARS ── */
-.shoot {{ position:fixed;height:2px;z-index:3;pointer-events:none;border-radius:2px;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.95),transparent);
-    box-shadow:0 0 8px rgba(255,255,255,0.7); }}
-.s1{{width:180px;top:10%;left:-220px;animation:shoot 8s linear infinite 0s;}}
-.s2{{width:100px;top:32%;left:-150px;animation:shoot 8s linear infinite 2.8s;opacity:.7;}}
-.s3{{width:70px; top:68%;left:-120px;animation:shoot 8s linear infinite 5.5s;opacity:.5;}}
-.s4{{width:130px;top:22%;left:-180px;animation:shoot 8s linear infinite 4s;opacity:.6;}}
-@keyframes shoot {{
-    0%   {{transform:translate(0,0) rotate(18deg);opacity:0;}}
-    4%   {{opacity:1;}}
-    60%  {{opacity:0;transform:translate(130vw,26vh) rotate(18deg);}}
-    100% {{transform:translate(130vw,26vh) rotate(18deg);opacity:0;}}
-}}
-
-/* ── FLOATING DUST ── */
-.dust {{
-    position:fixed;border-radius:50%;pointer-events:none;z-index:3;opacity:0;
-    animation:dustRise var(--dur,20s) ease-in-out infinite var(--del,0s);
-}}
-@keyframes dustRise {{
-    0%   {{transform:translateY(100vh) translateX(0) scale(0);opacity:0;}}
-    10%  {{opacity:.7;}}
-    90%  {{opacity:.2;}}
-    100% {{transform:translateY(-10vh) translateX(var(--dx,40px)) scale(2);opacity:0;}}
-}}
-
-/* ── MAIN CONTAINER ── */
-.cosmos-wrap {{
-    position:relative;
-    z-index:10;
-    max-width:800px;
-    margin:28px auto 64px;
-    padding:56px 52px 48px;
-    background:rgba(4,0,16,0.68);
-    backdrop-filter:blur(36px) saturate(1.8) brightness(1.05);
-    -webkit-backdrop-filter:blur(36px) saturate(1.8) brightness(1.05);
-    border:1px solid rgba({r1},0.28);
-    border-radius:36px;
-    box-shadow:
-        0 0 90px  rgba({r3},0.38),
-        0 0 180px rgba({r3},0.18),
-        0 0 360px rgba({r3},0.08),
-        inset 0 1px 0 rgba(255,255,255,0.14),
-        inset 0 -1px 0 rgba({r1},0.08);
-    animation:wrapPulse 7s ease-in-out infinite alternate;
-    transition:all 1.5s cubic-bezier(0.34,1.56,0.64,1);
-}}
-@keyframes wrapPulse {{
-    0%  {{box-shadow:0 0 90px rgba({r3},0.38), 0 0 180px rgba({r3},0.18), inset 0 1px 0 rgba(255,255,255,0.14);}}
-    100%{{box-shadow:0 0 130px rgba({r3},0.58),0 0 260px rgba({r3},0.28), inset 0 1px 0 rgba(255,255,255,0.22);}}
-}}
-/* Top badge */
-.cosmos-wrap::before {{
-    content:'✦  ᚷ  ᛃ  ᛇ  ✦';
-    position:absolute;
-    top:-15px;left:50%;
-    transform:translateX(-50%);
-    background:rgba(4,0,16,0.95);
-    padding:3px 20px;
-    border:1px solid rgba({r1},0.45);
-    border-radius:30px;
-    color:rgba({r1},0.85);
-    font-family:'Cinzel Decorative',serif;
-    font-size:0.55rem;
-    letter-spacing:0.4em;
-    white-space:nowrap;
-    animation:badgePulse 4s ease-in-out infinite;
-}}
-@keyframes badgePulse {{
-    0%,100%{{box-shadow:0 0 10px rgba({r1},0.3);color:rgba({r1},0.7);}}
-    50%    {{box-shadow:0 0 25px rgba({r1},0.7);color:rgba({r1},1);}}
-}}
-
-/* ── TITLE ── */
-.oracle-title {{
-    font-family:'Cinzel Decorative',serif;
-    font-size:clamp(2rem,5vw,3.4rem);
-    font-weight:900;
-    text-align:center;
-    background:linear-gradient(135deg,#e8c0ff 0%,{c} 20%,#ffffff 40%,{c2} 60%,#ffb3e6 80%,#e8c0ff 100%);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-    background-clip:text;
-    background-size:400% 400%;
-    animation:titleFlow 5s ease infinite, titleIn 1.1s cubic-bezier(0.34,1.56,0.64,1) both;
-    letter-spacing:0.05em;
-    line-height:1.15;
-    margin-bottom:8px;
-}}
-@keyframes titleFlow {{
-    0%  {{background-position:0% 50%;}}
-    50% {{background-position:100% 50%;}}
-    100%{{background-position:0% 50%;}}
-}}
-@keyframes titleIn {{
-    from{{opacity:0;transform:scale(0.75) translateY(-24px) rotateX(20deg);}}
-    to  {{opacity:1;transform:scale(1)    translateY(0)    rotateX(0deg);}}
-}}
-
-.oracle-sub {{
-    font-family:'Cormorant Garamond',serif;
-    font-style:italic;
-    font-size:1.1rem;
-    color:rgba(200,170,255,0.72);
-    text-align:center;
-    letter-spacing:0.16em;
-    animation:subIn 1s ease 0.5s both;
-}}
-@keyframes subIn {{
-    from{{opacity:0;transform:translateY(14px);}}
-    to  {{opacity:1;transform:translateY(0);}}
-}}
-
-.rune-row {{
-    text-align:center;
-    font-size:1.25rem;
-    color:rgba({r1},0.45);
-    letter-spacing:0.6em;
-    margin:12px 0 28px;
-    animation:runeGlow 5s ease-in-out infinite;
-}}
-@keyframes runeGlow {{
-    0%,100%{{opacity:.35;text-shadow:none;}}
-    50%    {{opacity:.85;text-shadow:0 0 25px rgba({r1},0.9),0 0 50px rgba({r1},0.4);}}
-}}
-
-/* ── DIVIDER ── */
-.div-line {{
-    position:relative;
-    height:1px;
-    background:linear-gradient(90deg,transparent,rgba({r1},0.7),rgba({r2},0.7),transparent);
-    margin:24px 0;
-    animation:divGlow 3s ease-in-out infinite;
-}}
-.div-line::before {{
-    content:'✦';
-    position:absolute;
-    top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    background:rgba(4,0,16,0.95);
-    padding:0 12px;
-    color:rgba({r1},0.9);
-    font-size:0.65rem;
-    animation:diamSpin 7s linear infinite;
-}}
-@keyframes divGlow {{
-    0%,100%{{opacity:.5;}}
-    50%    {{opacity:1;}}
-}}
-@keyframes diamSpin {{
-    from{{transform:translate(-50%,-50%) rotate(0deg);}}
-    to  {{transform:translate(-50%,-50%) rotate(360deg);}}
-}}
-
-/* ── TEXTAREA ── */
-[data-testid="stTextArea"] label{{display:none!important;}}
 [data-testid="stTextArea"] textarea {{
-    background:rgba(8,0,24,0.78)!important;
-    border:1px solid rgba({r1},0.32)!important;
-    border-radius:22px!important;
-    color:#eedeff!important;
-    font-family:'Cormorant Garamond',serif!important;
-    font-size:1.12rem!important;
-    line-height:1.75!important;
-    padding:22px 26px!important;
-    transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1)!important;
-    resize:vertical!important;
-    letter-spacing:0.025em!important;
+    background: rgba(8,0,20,0.82) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 20px !important;
+    color: #f0e8ff !important;
+    font-family: Georgia, serif !important;
+    font-style: italic !important;
+    font-size: 1.05rem !important;
+    line-height: 1.7 !important;
+    padding: 18px 22px !important;
+    resize: none !important;
+    outline: none !important;
+    backdrop-filter: blur(30px) !important;
+    transition: all 0.4s ease !important;
+    box-shadow: 0 0 40px rgba(120,0,255,0.15) !important;
+    height: 100px !important;
 }}
 [data-testid="stTextArea"] textarea:focus {{
-    border-color:rgba({r1},0.95)!important;
-    box-shadow:0 0 35px rgba({r3},0.45),0 0 70px rgba({r3},0.18)!important;
-    outline:none!important;
+    border-color: rgba(255,255,255,0.4) !important;
+    box-shadow: 0 0 60px rgba(180,0,255,0.35), 0 0 120px rgba(180,0,255,0.15) !important;
 }}
 [data-testid="stTextArea"] textarea::placeholder {{
-    color:rgba(180,140,255,0.35)!important;
-    font-style:italic!important;
+    color: rgba(200,160,255,0.35) !important;
 }}
+[data-testid="stTextArea"] label {{ display:none !important; }}
+[data-testid="stFormSubmitButton"] {{
+    position: fixed !important;
+    bottom: 36px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 99999 !important;
+    width: min(720px,94vw) !important;
+}}
+[data-testid="stFormSubmitButton"] button {{
+    width: 100% !important;
+    padding: 17px 44px !important;
+    border: none !important;
+    border-radius: 60px !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    background: linear-gradient(135deg,#6600ff,#ff00aa,#ff6600,#ffe100) !important;
+    background-size: 400% 400% !important;
+    animation: btnFlow 3s ease infinite !important;
+    color: #fff !important;
+    box-shadow: 0 0 50px rgba(120,0,255,0.5) !important;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s !important;
+}}
+[data-testid="stFormSubmitButton"] button:hover {{
+    transform: scale(1.05) translateY(-2px) !important;
+    box-shadow: 0 0 80px rgba(180,0,255,0.75) !important;
+}}
+[data-testid="stSpinner"] {{ display:none!important; }}
 
-/* ── BUTTON ── */
-[data-testid="stButton"]>button {{
-    background:linear-gradient(135deg,{bf},{c}55,{c2}55,{bf})!important;
-    background-size:400% 400%!important;
-    animation:btnShimmer 3.5s ease infinite!important;
-    border:1px solid rgba({r1},0.65)!important;
-    border-radius:60px!important;
-    color:#fff!important;
-    font-family:'Cinzel Decorative',serif!important;
-    font-size:1rem!important;
-    font-weight:700!important;
-    letter-spacing:0.12em!important;
-    padding:18px 44px!important;
-    width:100%!important;
-    cursor:pointer!important;
-    transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)!important;
-    box-shadow:0 4px 35px rgba({r3},0.45),inset 0 1px 0 rgba(255,255,255,0.18)!important;
-    text-shadow:0 0 25px rgba(255,255,255,0.6)!important;
-    position:relative!important;
-    overflow:hidden!important;
-}}
-[data-testid="stButton"]>button:hover {{
-    transform:scale(1.06) translateY(-3px)!important;
-    box-shadow:0 10px 60px rgba({r3},0.75),0 0 120px rgba({r3},0.35)!important;
-    border-color:rgba({r1},1)!important;
-}}
-[data-testid="stButton"]>button:active {{
-    transform:scale(0.96) translateY(1px)!important;
-}}
-@keyframes btnShimmer {{
-    0%  {{background-position:0% 50%;}}
-    50% {{background-position:100% 50%;}}
-    100%{{background-position:0% 50%;}}
-}}
-
-/* ── WARNING ── */
-.warn-banner {{
-    background:linear-gradient(135deg,rgba(255,100,0,0.08),rgba(255,150,50,0.04));
-    border:1px solid rgba(255,150,50,0.42);
-    border-radius:20px;
-    padding:20px 28px;
-    color:#ffcc88;
-    font-family:'Cormorant Garamond',serif;
-    font-size:1.12rem;
-    font-style:italic;
-    text-align:center;
-    letter-spacing:0.06em;
-    line-height:1.7;
-    animation:warnPulse 2.5s ease-in-out infinite;
-}}
-@keyframes warnPulse {{
-    0%,100%{{box-shadow:0 0 14px rgba(255,150,50,0.2);}}
-    50%    {{box-shadow:0 0 35px rgba(255,150,50,0.55);}}
-}}
-
-/* ── PORTAL ── */
-.portal-wrap {{
-    position:relative;
-    width:220px;
-    height:220px;
-    margin:16px auto;
-}}
-.pr {{
-    position:absolute;
-    border-radius:50%;
-    border:2px solid transparent;
-}}
-.pr1 {{
-    inset:0;
-    border-color:rgba({r1},0.9) transparent rgba({r1},0.4) transparent;
-    animation:spinCW 3s linear infinite;
-    box-shadow:0 0 24px rgba({r3},0.45),inset 0 0 24px rgba({r3},0.1);
-}}
-.pr2 {{
-    inset:18px;
-    border-color:transparent rgba({r2},0.75) transparent rgba({r2},0.35);
-    animation:spinCCW 2s linear infinite;
-    box-shadow:0 0 18px rgba({r2},0.35);
-}}
-.pr3 {{
-    inset:36px;
-    border-style:dashed;
-    border-color:rgba(255,255,255,0.22) transparent;
-    animation:spinCW 8s linear infinite;
-}}
-.pr4 {{
-    inset:54px;
-    border-style:dotted;
-    border-color:rgba({r1},0.45) transparent rgba({r1},0.2) transparent;
-    animation:spinCCW 5.5s linear infinite;
-}}
-.pr5 {{
-    inset:68px;
-    border-color:rgba({r2},0.3) transparent;
-    border-style:dashed;
-    animation:spinCW 4s linear infinite;
-}}
-.portal-glow {{
-    position:absolute;
-    inset:60px;
-    border-radius:50%;
-    background:radial-gradient(ellipse at center,rgba({r3},0.4),transparent 70%);
-    animation:glowBreath 2.2s ease-in-out infinite;
-}}
-.portal-center {{
-    position:absolute;
-    top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    font-size:4rem;
-    z-index:5;
-    animation:centerBounce 2.5s ease-in-out infinite;
-    filter:drop-shadow(0 0 24px rgba({r3},1));
-}}
-@keyframes spinCW  {{from{{transform:rotate(0deg);}}to{{transform:rotate(360deg);}}}}
-@keyframes spinCCW {{from{{transform:rotate(0deg);}}to{{transform:rotate(-360deg);}}}}
-@keyframes glowBreath {{
-    0%,100%{{opacity:.5;transform:scale(1);}}
-    50%    {{opacity:1; transform:scale(1.4);}}
-}}
-@keyframes centerBounce {{
-    0%,100%{{transform:translate(-50%,-50%) scale(1)   rotate(-5deg);filter:drop-shadow(0 0 24px rgba({r3},1));}}
-    25%    {{transform:translate(-50%,-50%) scale(1.12) rotate(3deg); filter:drop-shadow(0 0 40px rgba({r3},1));}}
-    75%    {{transform:translate(-50%,-50%) scale(1.06) rotate(-3deg);filter:drop-shadow(0 0 32px rgba({r3},1));}}
-}}
-
-/* ── AURA LABEL ── */
-.aura-tag {{
-    text-align:center;
-    font-family:'Space Mono',monospace;
-    font-size:0.6rem;
-    letter-spacing:0.32em;
-    color:rgba({r1},0.72);
-    text-transform:uppercase;
-    margin:10px 0 4px;
-    animation:auraPulse 2.5s ease-in-out infinite;
-}}
-@keyframes auraPulse {{
-    0%,100%{{opacity:.55;text-shadow:none;}}
-    50%    {{opacity:1;  text-shadow:0 0 22px rgba({r1},0.85);}}
-}}
-
-/* ── EMOTION CARD ── */
-.emotion-card {{
-    text-align:center;
-    padding:20px 12px 16px;
-    animation:cardIn 1s cubic-bezier(0.34,1.56,0.64,1) both;
-}}
-@keyframes cardIn {{
-    from{{opacity:0;transform:scale(0.65) rotateY(30deg);}}
-    to  {{opacity:1;transform:scale(1)    rotateY(0);}}
-}}
-.emotion-fairy {{
-    font-size:4.5rem;
-    display:block;
-    animation:fairyDance 3.5s ease-in-out infinite;
-    filter:drop-shadow(0 0 28px {c});
-}}
-@keyframes fairyDance {{
-    0%   {{transform:translateY(0)    rotate(-10deg) scale(1);}}
-    20%  {{transform:translateY(-18px) rotate(5deg)  scale(1.08);}}
-    40%  {{transform:translateY(-10px) rotate(-6deg) scale(1.12);}}
-    60%  {{transform:translateY(-22px) rotate(8deg)  scale(1.05);}}
-    80%  {{transform:translateY(-6px)  rotate(-4deg) scale(1.09);}}
-    100% {{transform:translateY(0)    rotate(-10deg) scale(1);}}
-}}
-
-.crystal-row {{
-    display:flex;justify-content:center;gap:10px;
-    margin:10px 0;
-    animation:crystalIn 0.8s ease 0.5s both;
-}}
-@keyframes crystalIn {{
-    from{{opacity:0;transform:scale(0) rotate(180deg);}}
-    to  {{opacity:1;transform:scale(1) rotate(0);}}
-}}
-.xtal {{
-    font-size:1.6rem;
-    animation:xtalBounce 1.6s ease-in-out infinite;
-    filter:drop-shadow(0 0 10px {c});
-}}
-.xtal:nth-child(1){{animation-delay:0s;}}
-.xtal:nth-child(2){{animation-delay:0.18s;}}
-.xtal:nth-child(3){{animation-delay:0.36s;font-size:2rem;}}
-.xtal:nth-child(4){{animation-delay:0.18s;}}
-.xtal:nth-child(5){{animation-delay:0s;}}
-@keyframes xtalBounce {{
-    0%,100%{{transform:translateY(0) scale(1);}}
-    50%    {{transform:translateY(-10px) scale(1.25);}}
-}}
-
-.emotion-name {{
-    font-family:'Cinzel Decorative',serif;
-    font-size:clamp(1.8rem,4.5vw,2.8rem);
-    font-weight:900;
-    color:{c};
-    letter-spacing:0.22em;
-    text-transform:uppercase;
-    animation:namePulse 2s ease-in-out infinite;
-    margin:10px 0 4px;
-}}
-@keyframes namePulse {{
-    0%,100%{{text-shadow:0 0 20px {c},0 0 40px {c}66;}}
-    50%    {{text-shadow:0 0 45px {c},0 0 90px {c},0 0 140px {c}33;}}
-}}
-
-.emotion-rune {{
-    font-size:2.2rem;
-    color:rgba({r1},0.45);
-    display:block;
-    margin:6px 0 10px;
-    animation:runeSpin 9s linear infinite;
-}}
-@keyframes runeSpin {{
-    0%  {{transform:rotate(0deg);opacity:.3;}}
-    50% {{opacity:.85;}}
-    100%{{transform:rotate(360deg);opacity:.3;}}
-}}
-
-.emotion-msg {{
-    font-family:'Cormorant Garamond',serif;
-    font-style:italic;
-    font-size:1.12rem;
-    color:rgba(225,205,255,0.88);
-    max-width:540px;
-    margin:0 auto;
-    line-height:1.85;
-    letter-spacing:0.025em;
-    animation:msgIn 0.9s ease 0.6s both;
-}}
-@keyframes msgIn {{
-    from{{opacity:0;transform:translateY(14px);}}
-    to  {{opacity:1;transform:translateY(0);}}
-}}
-
-/* ── FLOATING PARTICLES ── */
-.pfloat-wrap {{
-    position:relative;
-    height:90px;
-    overflow:visible;
-    margin:8px 0;
-}}
-.pfloat {{
-    position:absolute;
-    font-size:1.9rem;
-    animation:pf var(--pdur,3s) ease-in-out infinite var(--pdel,0s);
-    filter:drop-shadow(0 0 14px {c}88);
-}}
-@keyframes pf {{
-    0%,100%{{transform:translateY(0) translateX(0) rotate(-6deg) scale(1);   opacity:.7;}}
-    33%    {{transform:translateY(-28px) translateX(10px) rotate(9deg) scale(1.25); opacity:1;}}
-    66%    {{transform:translateY(-16px) translateX(-8px) rotate(-4deg) scale(0.88);opacity:.8;}}
-}}
-
-/* ── SPECTRUM ── */
-.spectrum-wrap {{
-    background:rgba(255,255,255,0.025);
-    border:1px solid rgba({r1},0.18);
-    border-radius:24px;
-    padding:28px 32px;
-    margin-top:8px;
-    animation:specIn 0.8s ease 0.4s both;
-}}
-@keyframes specIn {{
-    from{{opacity:0;transform:translateY(22px);}}
-    to  {{opacity:1;transform:translateY(0);}}
-}}
-.spec-title {{
-    font-family:'Cinzel Decorative',serif;
-    font-size:0.6rem;
-    letter-spacing:0.28em;
-    color:rgba({r1},0.62);
-    text-align:center;
-    text-transform:uppercase;
-    margin-bottom:22px;
-    animation:specTitlePulse 3s ease-in-out infinite;
-}}
-@keyframes specTitlePulse {{
-    0%,100%{{opacity:.55;}}
-    50%    {{opacity:1;text-shadow:0 0 15px rgba({r1},0.7);}}
-}}
-
-.bar-row {{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    margin-bottom:13px;
-    animation:barIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-}}
-.bar-row:nth-child(1){{animation-delay:0.08s;}}
-.bar-row:nth-child(2){{animation-delay:0.16s;}}
-.bar-row:nth-child(3){{animation-delay:0.24s;}}
-.bar-row:nth-child(4){{animation-delay:0.32s;}}
-.bar-row:nth-child(5){{animation-delay:0.40s;}}
-.bar-row:nth-child(6){{animation-delay:0.48s;}}
-@keyframes barIn {{
-    from{{opacity:0;transform:translateX(-35px) scale(0.93);}}
-    to  {{opacity:1;transform:translateX(0) scale(1);}}
-}}
-.bar-lbl {{
-    font-family:'Cinzel Decorative',serif;
-    font-size:0.55rem;
-    letter-spacing:0.09em;
-    min-width:82px;
-    text-align:right;
-    line-height:1.4;
-}}
-.bar-track {{
-    flex:1;
-    height:13px;
-    background:rgba(255,255,255,0.05);
-    border-radius:14px;
-    overflow:hidden;
-    position:relative;
-    border:1px solid rgba(255,255,255,0.05);
-    box-shadow:inset 0 2px 4px rgba(0,0,0,0.4);
-}}
-.bar-fill {{
-    height:100%;
-    border-radius:14px;
-    position:relative;
-    overflow:hidden;
-    animation:fillGrow 1.4s cubic-bezier(0.34,1.56,0.64,1) both;
-}}
-@keyframes fillGrow {{
-    from{{width:0!important;}}
-}}
-.bar-fill::after {{
-    content:'';
-    position:absolute;
-    top:0;left:-80%;
-    width:60%;height:100%;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent);
-    animation:barShine 2.2s ease-in-out infinite;
-}}
-@keyframes barShine {{
-    0%  {{left:-80%;}}
-    100%{{left:180%;}}
-}}
-.bar-pct {{
-    font-family:'Space Mono',monospace;
-    font-size:0.68rem;
-    min-width:36px;
-    color:rgba(200,170,255,0.6);
-}}
-
-/* ── FOOTER ── */
-.cosmic-footer {{
-    margin-top:36px;
-    padding:20px 32px;
-    background:linear-gradient(135deg,rgba({r1},0.07),rgba({r2},0.04));
-    border:1px solid rgba({r1},0.3);
-    border-radius:20px;
-    text-align:center;
-    font-family:'Cinzel Decorative',serif;
-    font-size:0.68rem;
-    letter-spacing:0.28em;
-    color:rgba(200,170,255,0.62);
-    animation:footerGlow 5s ease-in-out infinite alternate;
-    position:relative;
-    overflow:hidden;
-}}
-.cosmic-footer::before {{
-    content:'';
-    position:absolute;
-    top:-50%;left:-50%;width:200%;height:200%;
-    background:conic-gradient(from 0deg at 50% 50%,
-        transparent 0%,rgba({r1},0.06) 25%,
-        transparent 50%,rgba({r2},0.06) 75%,transparent 100%);
-    animation:footerSpin 10s linear infinite;
-}}
-@keyframes footerSpin {{from{{transform:rotate(0deg);}}to{{transform:rotate(360deg);}}}}
-@keyframes footerGlow {{
-    0%  {{box-shadow:0 0 18px rgba({r3},0.22);}}
-    100%{{box-shadow:0 0 50px rgba({r3},0.55),0 0 100px rgba({r3},0.2);}}
-}}
-.footer-inner {{position:relative;z-index:2;}}
-.footer-sub {{
-    opacity:.4;
-    font-size:.5rem;
-    letter-spacing:.18em;
-    display:block;
-    margin-top:6px;
-    font-family:'Space Mono',monospace;
-}}
-
-/* ── SPINNER ── */
-[data-testid="stSpinner"] p {{
-    font-family:'Cormorant Garamond',serif!important;
-    font-style:italic!important;
-    color:rgba(200,170,255,0.85)!important;
-    font-size:1.12rem!important;
-    letter-spacing:0.1em!important;
-    animation:spinPulse 1.5s ease-in-out infinite!important;
-}}
-@keyframes spinPulse {{
-    0%,100%{{opacity:.55;}}
-    50%    {{opacity:1;}}
+@keyframes btnFlow {{
+    0%  {{ background-position:0% 50%; }}
+    50% {{ background-position:100% 50%; }}
+    100%{{ background-position:0% 50%; }}
 }}
 </style>
 
-<!-- BACKGROUND LAYERS -->
-<div class="star-canvas" id="starCanvas"></div>
-<div class="shoot s1"></div><div class="shoot s2"></div>
-<div class="shoot s3"></div><div class="shoot s4"></div>
+<!-- FULL-SCREEN CANVAS EXPERIENCE -->
+<div id="SP" style="position:fixed;inset:0;width:100vw;height:100vh;overflow:hidden;z-index:100;pointer-events:none;">
+  <canvas id="bgC" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <canvas id="ptC" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+
+  <!-- UI OVERLAY -->
+  <div id="uiLayer" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding-top:clamp(24px,5vh,60px);">
+
+    <!-- TITLE -->
+    <div id="titleWrap" style="text-align:center;margin-bottom:clamp(12px,3vh,32px);">
+      <div id="titleText" style="font-size:clamp(2.2rem,6vw,4.5rem);font-weight:900;letter-spacing:0.06em;cursor:default;user-select:none;line-height:1;"></div>
+      <div style="font-size:clamp(0.55rem,1.1vw,0.75rem);letter-spacing:0.45em;color:rgba(255,255,255,0.3);margin-top:10px;text-transform:uppercase;font-family:monospace;">Emotion Alchemy Engine</div>
+      <div id="runeBar" style="margin-top:12px;font-size:1.1rem;letter-spacing:0.6em;color:rgba(255,255,255,0.15);animation:runeGlow 4s ease-in-out infinite;">ᚷ ᛃ ᛇ ᚾ ᚦ ᛚ</div>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div id="resultPanel" style="display:none;width:min(700px,92vw);animation:panelIn 0.9s cubic-bezier(0.34,1.56,0.64,1) both;">
+
+      <!-- EMOTION HERO -->
+      <div id="heroBlock" style="
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:28px;
+        padding:clamp(18px,3vw,32px) clamp(20px,4vw,40px);
+        margin-bottom:14px;
+        display:flex;align-items:center;gap:24px;
+        position:relative;overflow:hidden;
+        backdrop-filter:blur(24px);
+      ">
+        <div id="heroBg" style="position:absolute;inset:0;border-radius:28px;opacity:0.07;pointer-events:none;"></div>
+        <div id="heroSym" style="font-size:clamp(3rem,7vw,5.5rem);line-height:1;animation:heroSpin 5s ease-in-out infinite;position:relative;z-index:1;filter:drop-shadow(0 0 30px currentColor);"></div>
+        <div style="flex:1;position:relative;z-index:1;">
+          <div id="heroLabel" style="font-size:clamp(1.8rem,4.5vw,3.2rem);font-weight:900;letter-spacing:0.2em;line-height:1;margin-bottom:8px;"></div>
+          <div id="heroDesc" style="font-size:clamp(0.75rem,1.4vw,0.95rem);letter-spacing:0.14em;opacity:0.6;font-style:italic;font-family:Georgia,serif;"></div>
+        </div>
+        <!-- PIPE BARS right side -->
+        <div id="pipeBars" style="display:flex;align-items:flex-end;gap:6px;height:60px;position:relative;z-index:1;"></div>
+      </div>
+
+      <!-- SPECTRUM -->
+      <div id="spectrumWrap" style="
+        background:rgba(255,255,255,0.03);
+        border:1px solid rgba(255,255,255,0.06);
+        border-radius:22px;
+        padding:clamp(14px,2.5vw,24px) clamp(16px,3vw,28px);
+        backdrop-filter:blur(20px);
+      ">
+        <div style="font-size:0.55rem;letter-spacing:0.3em;color:rgba(255,255,255,0.25);text-transform:uppercase;text-align:center;margin-bottom:14px;font-family:monospace;">◈ &nbsp; Full Emotional Spectrum &nbsp; ◈</div>
+        <div id="specRows"></div>
+      </div>
+
+    </div>
+
+    <!-- SPACER so result doesn't overlap inputs -->
+    <div style="flex:1;min-height:20px;"></div>
+    <!-- Extra bottom space for fixed input -->
+    <div style="height:200px;"></div>
+  </div>
+
+  <!-- WARNING TOAST -->
+  <div id="warnToast" class="{warn_class}" style="
+    position:fixed;bottom:32px;left:50%;
+    transform:translateX(-50%) translateY(120px);
+    background:rgba(255,100,0,0.15);
+    border:1px solid rgba(255,160,50,0.45);
+    border-radius:60px;padding:13px 30px;
+    color:#ffcc88;font-size:0.78rem;letter-spacing:0.15em;
+    backdrop-filter:blur(20px);
+    transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    white-space:nowrap;z-index:200000;pointer-events:none;
+  ">⚠ &nbsp; Pour something into the void first &nbsp; ⚠</div>
+
+</div>
+
+<style>
+@keyframes runeGlow {{
+    0%,100%{{ opacity:0.1; }}
+    50%    {{ opacity:0.45; text-shadow:0 0 20px rgba(160,100,255,0.8); }}
+}}
+@keyframes panelIn {{
+    from{{ opacity:0; transform:translateY(30px) scale(0.95); }}
+    to  {{ opacity:1; transform:translateY(0) scale(1); }}
+}}
+@keyframes heroSpin {{
+    0%,100%{{ transform:scale(1) rotate(-5deg); }}
+    33%    {{ transform:scale(1.12) rotate(5deg); }}
+    66%    {{ transform:scale(1.06) rotate(-3deg); }}
+}}
+@keyframes specRowIn {{
+    from{{ opacity:0; transform:translateX(-20px); }}
+    to  {{ opacity:1; transform:translateX(0); }}
+}}
+@keyframes pipeFill {{
+    from{{ width:0!important; }}
+}}
+@keyframes pipeShine {{
+    0%  {{ left:-80%; }}
+    100%{{ left:180%; }}
+}}
+@keyframes warnShow {{
+    to{{ transform:translateX(-50%) translateY(0); }}
+}}
+#warnToast.show {{
+    animation: warnShow 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards,
+               warnHide 0.5s ease 2.5s forwards;
+}}
+@keyframes warnHide {{
+    to{{ transform:translateX(-50%) translateY(120px); }}
+}}
+@keyframes titleLetterFloat {{
+    0%,100%{{ transform:translateY(0) scaleY(1); }}
+    50%    {{ transform:translateY(-6px) scaleY(1.05); }}
+}}
+</style>
 
 <script>
-(function(){{
-    // Stars
-    const c = document.getElementById('starCanvas');
-    if(!c) return;
-    for(let i=0;i<150;i++){{
-        const s=document.createElement('div');
-        s.className='star';
-        const sz=Math.random()*2.8+0.4;
-        const hue=Math.random()*80+200;
-        s.style.cssText=`width:${{sz}}px;height:${{sz}}px;top:${{Math.random()*100}}%;left:${{Math.random()*100}}%;--dur:${{(Math.random()*5+1.5).toFixed(1)}}s;--del:-${{(Math.random()*6).toFixed(1)}}s;background:hsl(${{hue}},80%,${{Math.random()*25+68}}%);`;
-        c.appendChild(s);
+(function() {{
+const RESULT = {result_json};
+
+// ── CANVAS ────────────────────────────────────────────────────────────────────
+const bgC = document.getElementById('bgC');
+const ptC = document.getElementById('ptC');
+const bgX = bgC.getContext('2d');
+const ptX = ptC.getContext('2d');
+let W, H, t=0, mx=0, my=0;
+
+// Dynamic color palette
+const DEFAULT_PAL = ['#6600FF','#FF00AA','#00CCFF','#FFD700'];
+let pal = DEFAULT_PAL.slice();
+let targetPal = pal.slice();
+
+function resize() {{
+    W = bgC.width = ptC.width = window.innerWidth;
+    H = bgC.height= ptC.height= window.innerHeight;
+}}
+resize();
+window.addEventListener('resize', resize);
+
+document.addEventListener('mousemove', e=>{{ mx=e.clientX; my=e.clientY; spawnMouse(); }});
+document.addEventListener('touchmove', e=>{{ mx=e.touches[0].clientX; my=e.touches[0].clientY; }},{{passive:true}});
+document.addEventListener('click', e=>{{
+    for(let i=0;i<20;i++) {{
+        const p=new Dot(true);
+        p.x=e.clientX; p.y=e.clientY;
+        p.vx=(Math.random()-0.5)*7;
+        p.vy=(Math.random()-0.5)*7-2;
+        DOTS.push(p);
     }}
-    // Dust
-    const body=document.querySelector('[data-testid="stAppViewContainer"]')||document.body;
-    const glowR='{r3}';
-    for(let i=0;i<25;i++){{
-        const d=document.createElement('div');
-        d.className='dust';
-        const sz=Math.random()*5+2;
-        d.style.cssText=`width:${{sz}}px;height:${{sz}}px;left:${{Math.random()*100}}%;bottom:0;background:rgba(${{glowR}},${{(Math.random()*0.45+0.1).toFixed(2)}});--dur:${{(Math.random()*16+10).toFixed(1)}}s;--del:-${{(Math.random()*22).toFixed(1)}}s;--dx:${{((Math.random()-0.5)*100).toFixed(0)}}px;box-shadow:0 0 ${{sz*3}}px rgba(${{glowR}},0.6);`;
-        body.appendChild(d);
+}});
+
+// ── COLOR LERP ────────────────────────────────────────────────────────────────
+function h2r(h) {{
+    h=h.replace('#','');
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}}
+function r2h(r,g,b) {{
+    return '#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+}}
+
+let lerpT = 0;
+function stepPal() {{
+    lerpT = Math.min(lerpT + 0.012, 1);
+    for(let i=0;i<4;i++) {{
+        const A=h2r(pal[i]), B=h2r(targetPal[i]);
+        pal[i] = r2h(A[0]+(B[0]-A[0])*lerpT, A[1]+(B[1]-A[1])*lerpT, A[2]+(B[2]-A[2])*lerpT);
     }}
+}}
+
+// ── FLUID BLOB BG ─────────────────────────────────────────────────────────────
+function drawBg() {{
+    bgX.fillStyle = 'rgba(0,0,0,0.14)';
+    bgX.fillRect(0,0,W,H);
+
+    const blobs = [
+        {{bx:0.12+Math.sin(t*0.38)*0.14, by:0.18+Math.cos(t*0.29)*0.14, br:0.42, ci:0}},
+        {{bx:0.88+Math.cos(t*0.32)*0.1,  by:0.78+Math.sin(t*0.42)*0.12, br:0.38, ci:1}},
+        {{bx:0.55+Math.sin(t*0.48+1)*0.2,by:0.08+Math.cos(t*0.38+2)*0.1,br:0.3,  ci:2}},
+        {{bx:0.28+Math.cos(t*0.28+3)*0.14,by:0.82+Math.sin(t*0.48)*0.1, br:0.34, ci:3}},
+        {{bx:0.72+Math.sin(t*0.42+2)*0.12,by:0.42+Math.cos(t*0.32)*0.2, br:0.3,  ci:0}},
+        {{bx:mx/W, by:my/H, br:0.28, ci:1}},  // follows mouse
+    ];
+
+    blobs.forEach(b => {{
+        const x=b.bx*W, y=b.by*H, r=b.br*Math.min(W,H);
+        const [rr,gg,bb] = h2r(pal[b.ci]);
+        const g = bgX.createRadialGradient(x,y,0,x,y,r);
+        g.addColorStop(0,  `rgba(${{rr}},${{gg}},${{bb}},0.22)`);
+        g.addColorStop(0.5,`rgba(${{rr}},${{gg}},${{bb}},0.08)`);
+        g.addColorStop(1,  `rgba(${{rr}},${{gg}},${{bb}},0)`);
+        bgX.fillStyle=g;
+        bgX.fillRect(0,0,W,H);
+    }});
+}}
+
+// ── NODES & PIPES (connective lines) ──────────────────────────────────────────
+const NODES = Array.from({{length:14}},()=>{{
+    const ci=Math.floor(Math.random()*4);
+    return {{
+        x:Math.random()*window.innerWidth,
+        y:Math.random()*window.innerHeight,
+        vx:(Math.random()-0.5)*0.9,
+        vy:(Math.random()-0.5)*0.9,
+        r:1.5+Math.random()*2.5,
+        ci,
+    }};
+}});
+
+function drawNodes() {{
+    NODES.forEach(n => {{
+        n.x+=n.vx; n.y+=n.vy;
+        if(n.x<0||n.x>W) n.vx*=-1;
+        if(n.y<0||n.y>H) n.vy*=-1;
+    }});
+    for(let i=0;i<NODES.length;i++) {{
+        for(let j=i+1;j<NODES.length;j++) {{
+            const dx=NODES[j].x-NODES[i].x,dy=NODES[j].y-NODES[i].y;
+            const d=Math.sqrt(dx*dx+dy*dy);
+            if(d<220){{
+                const a=(1-d/220)*0.4;
+                const [rr,gg,bb]=h2r(pal[NODES[i].ci]);
+                bgX.beginPath();
+                bgX.moveTo(NODES[i].x,NODES[i].y);
+                bgX.lineTo(NODES[j].x,NODES[j].y);
+                bgX.strokeStyle=`rgba(${{rr}},${{gg}},${{bb}},${{a}})`;
+                bgX.lineWidth=1;
+                bgX.stroke();
+            }}
+        }}
+        // Mouse connection
+        const dx2=mx-NODES[i].x, dy2=my-NODES[i].y;
+        const d2=Math.sqrt(dx2*dx2+dy2*dy2);
+        if(d2<180){{
+            const a=(1-d2/180)*0.7;
+            const [rr,gg,bb]=h2r(pal[NODES[i].ci]);
+            bgX.beginPath();
+            bgX.moveTo(NODES[i].x,NODES[i].y);
+            bgX.lineTo(mx,my);
+            bgX.strokeStyle=`rgba(${{rr}},${{gg}},${{bb}},${{a}})`;
+            bgX.lineWidth=1.5;
+            bgX.stroke();
+        }}
+        // Node dot
+        const [rr,gg,bb]=h2r(pal[NODES[i].ci]);
+        bgX.beginPath();
+        bgX.arc(NODES[i].x,NODES[i].y,NODES[i].r,0,Math.PI*2);
+        bgX.fillStyle=`rgba(${{rr}},${{gg}},${{bb}},0.85)`;
+        bgX.shadowBlur=12; bgX.shadowColor=pal[NODES[i].ci];
+        bgX.fill();
+        bgX.shadowBlur=0;
+    }}
+}}
+
+// ── PARTICLES ─────────────────────────────────────────────────────────────────
+const DOTS = [];
+const SHAPES = ['circle','diamond','cross','ring','star'];
+
+class Dot {{
+    constructor(fromMouse=false) {{
+        this.fromMouse = fromMouse;
+        if(fromMouse) {{
+            this.x=mx+(Math.random()-0.5)*16;
+            this.y=my+(Math.random()-0.5)*16;
+            this.vx=(Math.random()-0.5)*4;
+            this.vy=(Math.random()-0.5)*4-1.5;
+            this.maxLife=0.5+Math.random()*0.8;
+        }} else {{
+            this.x=Math.random()*W;
+            this.y=H+10;
+            this.vx=(Math.random()-0.5)*0.7;
+            this.vy=-(0.4+Math.random()*1.4);
+            this.maxLife=5+Math.random()*8;
+        }}
+        this.ci=Math.floor(Math.random()*4);
+        this.r=fromMouse ? 2+Math.random()*5 : 0.8+Math.random()*3;
+        this.age=0;
+        this.angle=Math.random()*Math.PI*2;
+        this.spin=(Math.random()-0.5)*0.08;
+        this.shape=SHAPES[Math.floor(Math.random()*SHAPES.length)];
+        this.twinkle=Math.random()*Math.PI*2;
+    }}
+    update() {{
+        this.x+=this.vx+(Math.random()-0.5)*0.15;
+        this.y+=this.vy;
+        this.vy-=0.006;
+        this.age+=1/60;
+        this.angle+=this.spin;
+        this.twinkle+=0.08;
+        const lr=this.age/this.maxLife;
+        this.op=this.fromMouse
+            ? Math.sin(lr*Math.PI)*0.9
+            : (lr<0.08?lr/0.08:lr>0.75?(1-lr)/0.25:1)*0.75;
+        return this.age<this.maxLife&&this.x>-10&&this.x<W+10&&this.y>-10;
+    }}
+    draw(ctx) {{
+        const [rr,gg,bb]=h2r(pal[this.ci]);
+        const twinkleOp = this.op * (0.7+Math.sin(this.twinkle)*0.3);
+        ctx.save();
+        ctx.globalAlpha=twinkleOp;
+        ctx.translate(this.x,this.y);
+        ctx.rotate(this.angle);
+        ctx.shadowBlur=this.r*5;
+        ctx.shadowColor=pal[this.ci];
+        const fill=`rgba(${{rr}},${{gg}},${{bb}},1)`;
+        const stroke=`rgba(${{rr}},${{gg}},${{bb}},0.8)`;
+        const s=this.r;
+        if(this.shape==='circle'){{
+            ctx.beginPath();ctx.arc(0,0,s,0,Math.PI*2);
+            ctx.fillStyle=fill;ctx.fill();
+        }} else if(this.shape==='diamond'){{
+            ctx.beginPath();ctx.moveTo(0,-s*1.5);ctx.lineTo(s*1.2,0);ctx.lineTo(0,s*1.5);ctx.lineTo(-s*1.2,0);ctx.closePath();
+            ctx.fillStyle=fill;ctx.fill();
+        }} else if(this.shape==='cross'){{
+            ctx.strokeStyle=stroke;ctx.lineWidth=s*0.6;ctx.lineCap='round';
+            ctx.beginPath();ctx.moveTo(-s,0);ctx.lineTo(s,0);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(0,s);ctx.stroke();
+        }} else if(this.shape==='ring'){{
+            ctx.beginPath();ctx.arc(0,0,s,0,Math.PI*2);
+            ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();
+        }} else {{  // star
+            ctx.fillStyle=fill;
+            for(let i=0;i<5;i++){{
+                const a=i*Math.PI*2/5-Math.PI/2;
+                const b=a+Math.PI/5;
+                if(i===0) ctx.beginPath();
+                ctx.lineTo(Math.cos(a)*s,Math.sin(a)*s);
+                ctx.lineTo(Math.cos(b)*s*0.45,Math.sin(b)*s*0.45);
+            }}
+            ctx.closePath();ctx.fill();
+        }}
+        ctx.restore();
+    }}
+}}
+
+let lastMSpawn=0;
+function spawnMouse(){{
+    const now=Date.now();
+    if(now-lastMSpawn>35&&DOTS.length<250){{
+        DOTS.push(new Dot(true));DOTS.push(new Dot(true));
+        lastMSpawn=now;
+    }}
+}}
+
+function updateDots(){{
+    for(let i=DOTS.length-1;i>=0;i--){{
+        if(!DOTS[i].update()) DOTS.splice(i,1);
+    }}
+}}
+function drawDots(){{
+    ptX.clearRect(0,0,W,H);
+    DOTS.forEach(d=>d.draw(ptX));
+}}
+
+// ── TITLE ─────────────────────────────────────────────────────────────────────
+const TITLE_STR = "SOUL PRISM";
+function animTitle(){{
+    const el=document.getElementById('titleText');
+    if(!el) return;
+    el.innerHTML=TITLE_STR.split('').map((ch,i)=>{{
+        if(ch===' ') return `<span>&nbsp;</span>`;
+        const ci=Math.floor(((t*0.6+i*0.2)%4+4)%4);
+        const c=pal[ci];
+        const dy=Math.sin(t*1.8+i*0.45)*5;
+        const sy=0.94+Math.sin(t*2.2+i*0.5)*0.08;
+        return `<span style="display:inline-block;color:${{c}};text-shadow:0 0 30px ${{c}},0 0 60px ${{c}}66;transform:translateY(${{dy.toFixed(1)}}px) scaleY(${{sy.toFixed(2)}});transition:color 0.6s;">${{ch}}</span>`;
+    }}).join('');
+}}
+
+// ── RESULT RENDERING ──────────────────────────────────────────────────────────
+function renderResult(){{
+    if(!RESULT) return;
+    const r=RESULT;
+    targetPal=r.colors.slice();lerpT=0;
+
+    document.getElementById('resultPanel').style.display='block';
+
+    // Hero
+    const hero=document.getElementById('heroBlock');
+    const heroBg=document.getElementById('heroBg');
+    const heroSym=document.getElementById('heroSym');
+    const heroLabel=document.getElementById('heroLabel');
+    const heroDesc=document.getElementById('heroDesc');
+
+    heroBg.style.background=`linear-gradient(135deg,${{r.colors.join(',')}})`;
+    hero.style.boxShadow=`0 0 80px ${{r.colors[0]}}44,0 0 160px ${{r.colors[0]}}22`;
+    hero.style.borderColor=`rgba(${{h2r(r.colors[0]).join(',')}},0.3)`;
+
+    heroSym.textContent=r.sym;
+    heroSym.style.color=r.colors[0];
+    heroSym.style.textShadow=`0 0 40px ${{r.colors[0]}},0 0 80px ${{r.colors[1]}}`;
+
+    heroLabel.textContent=r.label;
+    heroLabel.style.background=`linear-gradient(135deg,${{r.colors.join(',')}})`;
+    heroLabel.style.webkitBackgroundClip='text';
+    heroLabel.style.webkitTextFillColor='transparent';
+    heroLabel.style.backgroundClip='text';
+
+    heroDesc.textContent=r.desc;
+    heroDesc.style.color=r.colors[2];
+
+    // Pipe bars (animated vertical bars)
+    const pb=document.getElementById('pipeBars');
+    pb.innerHTML='';
+    r.colors.forEach((c,i)=>{{
+        const heights=[28,44,36,52];
+        const bar=document.createElement('div');
+        bar.style.cssText=`width:6px;height:${{heights[i]}}px;border-radius:6px;background:${{c}};box-shadow:0 0 16px ${{c}};animation:heroBarGrow 0.8s cubic-bezier(0.34,1.56,0.64,1) ${{i*0.12}}s both;`;
+        pb.appendChild(bar);
+    }});
+
+    // Spectrum
+    const sr=document.getElementById('specRows');
+    sr.innerHTML='';
+    r.spectrum.forEach((em,idx)=>{{
+        const row=document.createElement('div');
+        row.style.cssText=`display:flex;align-items:center;gap:14px;margin-bottom:10px;animation:specRowIn 0.5s ease ${{0.1+idx*0.08}}s both;opacity:0;`;
+
+        const lbl=document.createElement('div');
+        lbl.style.cssText=`font-size:0.56rem;letter-spacing:0.12em;min-width:74px;text-align:right;text-transform:uppercase;color:${{em.colors[0]}};font-weight:700;font-family:monospace;line-height:1.3;`;
+        lbl.innerHTML=`${{em.sym}}<br>${{em.label}}`;
+
+        const track=document.createElement('div');
+        track.style.cssText=`flex:1;height:11px;background:rgba(255,255,255,0.05);border-radius:11px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.06);`;
+
+        const fill=document.createElement('div');
+        fill.style.cssText=`height:100%;width:${{Math.max(em.pct,1)}}%;border-radius:11px;background:linear-gradient(90deg,${{em.colors.join(',')}});box-shadow:0 0 14px ${{em.colors[0]}};animation:pipeFill 1.3s cubic-bezier(0.34,1.56,0.64,1) ${{0.2+idx*0.08}}s both;position:relative;overflow:hidden;`;
+
+        const shine=document.createElement('div');
+        shine.style.cssText=`position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent);animation:pipeShine 2.2s ease-in-out ${{idx*0.15}}s infinite;`;
+        fill.appendChild(shine);
+        track.appendChild(fill);
+
+        const pct=document.createElement('div');
+        pct.style.cssText=`font-size:0.62rem;min-width:34px;color:rgba(255,255,255,0.38);font-family:monospace;`;
+        pct.textContent=em.pct+'%';
+
+        row.appendChild(lbl);row.appendChild(track);row.appendChild(pct);
+        sr.appendChild(row);
+    }});
+
+    // Burst of particles
+    for(let i=0;i<80;i++) setTimeout(()=>DOTS.push(new Dot(true)), i*15);
+}}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+function loop(){{
+    t+=0.016;
+    stepPal();
+    drawBg();
+    drawNodes();
+    if(Math.random()<0.35&&DOTS.length<220) DOTS.push(new Dot(false));
+    updateDots();
+    drawDots();
+    animTitle();
+    requestAnimationFrame(loop);
+}}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loop();
+if(RESULT) setTimeout(renderResult, 150);
+
+// Textarea dynamic glow
+document.addEventListener('DOMContentLoaded',()=>{{
+    const obs=new MutationObserver(()=>{{
+        const ta=document.querySelector('[data-testid="stTextArea"] textarea');
+        if(ta&&!ta.__enhanced) {{
+            ta.__enhanced=true;
+            ta.addEventListener('input',()=>{{
+                for(let i=0;i<4;i++) DOTS.push(new Dot(true));
+            }});
+        }}
+    }});
+    obs.observe(document.body,{{childList:true,subtree:true}});
+}});
+
 }})();
 </script>
-""", unsafe_allow_html=True)
 
-# ── Render Helpers ────────────────────────────────────────────────────────────
-def render_header():
-    st.markdown("""
-<div class="oracle-title">🌌 Vibe Oracle</div>
-<div class="oracle-sub">The cosmos decodes the language of your soul</div>
-<div class="rune-row">ᚷ &nbsp; ✦ &nbsp; ᛃ &nbsp; ✦ &nbsp; ᛇ &nbsp; ✦ &nbsp; ᚾ &nbsp; ✦ &nbsp; ᚦ</div>
-""", unsafe_allow_html=True)
+<style>
+@keyframes heroBarGrow {{
+    from{{ height:0!important; }}
+}}
+</style>
+"""
 
-def render_divider():
-    st.markdown('<div class="div-line"></div>', unsafe_allow_html=True)
-
-def render_portal(ed):
-    st.markdown(f"""
-<div class="portal-wrap">
-    <div class="pr pr1"></div>
-    <div class="pr pr2"></div>
-    <div class="pr pr3"></div>
-    <div class="pr pr4"></div>
-    <div class="pr pr5"></div>
-    <div class="portal-glow"></div>
-    <div class="portal-center">{ed["moon"]}</div>
-</div>
-<div class="aura-tag">⟡ &nbsp; {ed["aura"]} &nbsp; ⟡</div>
-""", unsafe_allow_html=True)
-
-def render_particles(ed):
-    p = ed["particles"]
-    positions = [5, 14, 24, 35, 48, 60, 72, 82, 90, 96]
-    tops      = [30, 10, 55, 20, 45, 15, 60, 25, 40, 5]
-    durs      = [2.2, 3.0, 2.6, 3.4, 2.0, 3.1, 2.8, 2.4, 3.2, 2.7]
-    dels      = [0, 0.5, 1.0, 0.3, 1.4, 0.7, 0.2, 1.1, 0.8, 1.6]
-    html = '<div class="pfloat-wrap">'
-    for i, emoji in enumerate(p[:10]):
-        html += f'<span class="pfloat" style="left:{positions[i]}%;top:{tops[i]}%;--pdur:{durs[i]}s;--pdel:-{dels[i]}s">{emoji}</span>'
-    html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
-
-def render_emotion_card(emotion, ed):
-    cr = ed["crystal"]
-    st.markdown(f"""
-<div class="emotion-card">
-    <span class="emotion-fairy">{ed["fairy"]}</span>
-    <div class="crystal-row">
-        <span class="xtal">{cr}</span>
-        <span class="xtal">{cr}</span>
-        <span class="xtal">{ed["emoji"]}</span>
-        <span class="xtal">{cr}</span>
-        <span class="xtal">{cr}</span>
-    </div>
-    <div class="emotion-name">{emotion}</div>
-    <span class="emotion-rune">{ed["rune"]}</span>
-    <div class="emotion-msg">{ed["message"]}</div>
-</div>
-""", unsafe_allow_html=True)
-
-def render_spectrum(probs):
-    sorted_e = sorted(probs.items(), key=lambda x: -x[1])
-    html = '<div class="spectrum-wrap"><div class="spec-title">✦ &nbsp;&nbsp; Emotional Spectrum &nbsp;&nbsp; ✦</div>'
-    for emotion, pct in sorted_e:
-        ed = EMOTIONS[emotion]
-        c, c2 = ed["color"], ed["color2"]
-        w = max(pct, 0.8)
-        html += f"""
-<div class="bar-row">
-  <div class="bar-lbl" style="color:{c}">{ed['emoji']}&nbsp;{emotion.capitalize()}</div>
-  <div class="bar-track">
-    <div class="bar-fill" style="width:{w}%;background:linear-gradient(90deg,{c}44,{c},{c2})"></div>
-  </div>
-  <div class="bar-pct">{pct:.0f}%</div>
-</div>"""
-    html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
-
-def render_footer():
-    st.markdown("""
-<div class="cosmic-footer">
-  <div class="footer-inner">
-    ✦ &nbsp; Vibe decoded by the Cosmic Fairy &nbsp; ✦
-    <span class="footer-sub">POWERED BY STARLIGHT &amp; ANCIENT NLP RUNES &amp; COSMIC VIBRATIONS</span>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── MAIN ──────────────────────────────────────────────────────────────────────
-def main():
-    ed = st.session_state.get("last_ed", None)
-    inject_css(ed=ed)
-
-    st.markdown('<div class="cosmos-wrap">', unsafe_allow_html=True)
-    render_header()
-    render_divider()
-
-    user_text = st.text_area(
-        "soul",
-        placeholder="Pour your soul here… the stars are listening ✨",
-        height=155,
-        key="soul_input",
-        label_visibility="collapsed",
-    )
-
-    submitted = st.button("🔮 Reveal the Vibe")
-
-    if submitted:
-        raw = user_text.strip()
-        if not raw:
-            st.markdown("""
-<div class="warn-banner">
-🌙 The cosmos received only silence…<br>
-<span style="font-size:.9rem;opacity:.8">Speak your truth — even a whisper reshapes the stars</span>
-</div>""", unsafe_allow_html=True)
-        else:
-            with st.spinner("✨ Consulting the cosmos… aligning your stars…"):
-                probs = detect_emotion(raw)
-            dom = dominant_emotion(probs)
-            st.session_state["last_ed"]    = EMOTIONS[dom]
-            st.session_state["last_probs"] = probs
-            st.session_state["last_dom"]   = dom
-            st.session_state["has_result"] = True
-
-    if st.session_state.get("has_result"):
-        ed2   = st.session_state.get("last_ed")
-        probs = st.session_state.get("last_probs", {})
-        dom   = st.session_state.get("last_dom", "joy")
-        if ed2 and probs:
-            render_divider()
-            render_portal(ed2)
-            render_particles(ed2)
-            render_emotion_card(dom, ed2)
-            render_divider()
-            render_spectrum(probs)
-
-    render_divider()
-    render_footer()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
