@@ -76,53 +76,285 @@ EMOTION_KEYWORDS = {
     ],
 }
 
-# Hinglish + Bengali multi-language phrases (checked against raw input)
+# =============================================================================
+# THREE-LANGUAGE DICTIONARY  (English · Bengali · Hindi)
+# Used both for phrase-matching detection AND for the UI reference table.
+# =============================================================================
+
+# Each entry: { "en": [...], "bn": [...], "hi": [...] }
+LANG_DICT = {
+    "joy": {
+        "en": [
+            "happy", "joyful", "excited", "wonderful", "amazing", "delighted",
+            "thrilled", "ecstatic", "cheerful", "blissful", "elated", "radiant",
+            "grateful", "celebrate", "euphoric", "content", "pleased",
+        ],
+        "bn": [
+            "খুশি",           # khushi  – happy
+            "আনন্দিত",        # anandita – joyful
+            "উত্সাহিত",       # utsahit – excited
+            "দারুণ",          # darun – wonderful
+            "অসাধারণ",        # asadharan – amazing
+            "আনন্দ",          # ananda – joy
+            "হাসি",           # hashi – smile/laughter
+            "ভালো লাগছে",     # bhalo lagche – feeling good
+            "অনেক মজা",       # onek moja – so much fun
+            "খুব ভালো",       # khub bhalo – very good
+            "উল্লাস",         # ullas – delight
+            "তৃপ্তি",         # tripti – contentment
+            "কৃতজ্ঞ",         # kritagya – grateful
+            "উচ্ছ্বাস",       # uchchhas – elation
+            "মজাদার",         # mojadaar – enjoyable
+        ],
+        "hi": [
+            "खुश",            # khush – happy
+            "खुशी",           # khushi – happiness
+            "प्रसन्न",        # prasann – pleased
+            "आनंदित",         # aanandित – joyful
+            "उत्साहित",       # utsaahit – excited
+            "शानदार",         # shaandaar – wonderful
+            "मस्त",           # mast – awesome
+            "जश्न",           # jashn – celebration
+            "कमाल",           # kamaal – amazing
+            "बेहतरीन",        # behtareen – excellent
+            "दिल खुश",        # dil khush – heart happy
+            "बहुत मज़ा",       # bahut maza – so much fun
+            "कृतज्ञ",         # kritagna – grateful
+            "उल्लास",         # ullaas – joy
+            "तृप्त",          # trupt – content
+        ],
+    },
+    "anger": {
+        "en": [
+            "angry", "furious", "rage", "mad", "hate", "irritated", "annoyed",
+            "outraged", "frustrated", "enraged", "livid", "fuming", "hostile",
+            "bitter", "resentful", "aggressive", "infuriated", "wrathful",
+        ],
+        "bn": [
+            "রাগান্বিত",      # raganvit – angry
+            "ক্রোধিত",        # krodhit – furious
+            "রাগ হচ্ছে",      # rag hochhe – feeling angry
+            "খুব রাগ",        # khub rag – very angry
+            "বিরক্ত",         # birakt – irritated
+            "ঘেন্না",         # ghenna – disgust/hatred
+            "ক্ষুব্ধ",        # khubdh – outraged
+            "জ্বলছি",         # jolchi – burning (with anger)
+            "অসহ্য",          # asahya – unbearable
+            "হতাশ",           # hatash – frustrated
+            "শত্রুতা",        # shotrutha – hostility
+            "প্রতিশোধ",       # protishod – revenge
+            "উগ্র",           # ugro – aggressive
+            "তিক্ততা",        # tiktota – bitterness
+            "রোষ",            # rosh – wrath
+        ],
+        "hi": [
+            "गुस्सा",         # gussa – angry
+            "क्रोध",          # krodh – anger/rage
+            "नाराज़",         # naraaz – displeased
+            "चिढ़",           # chidh – irritated
+            "भड़का हुआ",      # bhadka hua – enraged
+            "आग बबूला",       # aag babula – furious
+            "बहुत गुस्सा",    # bahut gussa – very angry
+            "जलन",            # jalan – burning anger
+            "कोप",            # kop – wrath
+            "आक्रोश",         # aakrosh – outrage
+            "नफ़रत",          # nafrat – hatred
+            "झुंझलाहट",       # jhunjhlahat – annoyance
+            "कड़वाहट",        # kadwahat – bitterness
+            "रोष",            # rosh – fury
+            "तैश",            # taish – rage
+        ],
+    },
+    "sadness": {
+        "en": [
+            "sad", "unhappy", "depressed", "miserable", "heartbroken", "grief",
+            "sorrow", "hopeless", "lonely", "gloomy", "melancholy", "despair",
+            "devastated", "anguish", "broken", "suffering", "empty", "lost",
+        ],
+        "bn": [
+            "দুঃখিত",          # dukhit – sad
+            "মন খারাপ",        # mon kharap – feeling down
+            "কষ্ট পাচ্ছি",    # koshto pachhi – feeling hurt
+            "কান্না পাচ্ছে",  # kanna pachhe – feeling like crying
+            "একা",             # eka – alone/lonely
+            "হতাশ",            # hatash – hopeless
+            "দুঃখ",            # dukh – grief
+            "বিষণ্ণ",          # bishonno – gloomy
+            "ভেঙে পড়েছি",    # bhenge porechhi – broken down
+            "বিষাদ",           # bishad – melancholy
+            "শোক",             # shok – mourning
+            "যন্ত্রণা",        # jantrana – anguish
+            "অসহায়",          # asahay – helpless
+            "ক্লান্ত",         # klant – exhausted/weary
+            "বিধ্বস্ত",        # bidhwosto – devastated
+        ],
+        "hi": [
+            "उदास",            # udaas – sad
+            "दुखी",            # dukhi – unhappy
+            "निराश",           # niraash – disappointed/hopeless
+            "अकेला",           # akela – lonely
+            "टूटा हुआ",        # toota hua – broken
+            "रोना आ रहा",      # rona aa raha – feeling like crying
+            "दर्द",            # dard – pain
+            "गम",              # gham – grief
+            "बर्बाद",          # barbaad – devastated
+            "दिल टूट गया",    # dil toot gaya – heartbroken
+            "उजड़ा हुआ",      # ujda hua – desolate
+            "विषाद",           # vishad – melancholy
+            "पीड़ा",           # peeda – suffering
+            "तकलीफ़",         # takleef – distress
+            "बेबस",            # bebas – helpless
+        ],
+    },
+    "fear": {
+        "en": [
+            "afraid", "scared", "terrified", "anxious", "nervous", "panic",
+            "dread", "horror", "terror", "worried", "uneasy", "petrified",
+            "paranoid", "trembling", "haunted", "spooked", "fright", "nightmare",
+        ],
+        "bn": [
+            "ভয় পাচ্ছি",      # bhoy pachhi – feeling scared
+            "ভয় লাগছে",       # bhoy lagche – feeling fear
+            "আতঙ্কিত",         # aatankito – terrified
+            "নার্ভাস",         # nervous – nervous
+            "উদ্বিগ্ন",        # udbigno – anxious
+            "ভয়ংকর",          # bhoyonkor – horrifying
+            "দুশ্চিন্তা",      # dushchinta – worry
+            "আতঙ্ক",           # aatank – panic/terror
+            "শিউরে উঠছি",     # shiure uthchi – shuddering
+            "ভূত ভূত",         # bhoot bhoot – ghostly
+            "ত্রাস",           # tras – dread
+            "শঙ্কা",           # shanka – apprehension
+            "কাঁপছি",          # kampchi – trembling
+            "দুঃস্বপ্ন",       # duhswapno – nightmare
+            "আশঙ্কা",          # ashanka – fearful anticipation
+        ],
+        "hi": [
+            "डर",              # dar – fear
+            "डरा हुआ",         # dara hua – scared
+            "घबराहट",          # ghabrahat – nervousness
+            "भय",              # bhay – dread
+            "आतंक",            # aatank – terror
+            "चिंता",           # chinta – anxiety/worry
+            "दहशत",            # dahshat – horror
+            "सहम गया",         # saham gaya – startled/froze
+            "कांप रहा हूं",    # kaanp raha hun – trembling
+            "बहुत डर",         # bahut dar – very scared
+            "डर लग रहा है",   # dar lag raha hai – feeling scared
+            "भूत जैसा",        # bhoot jaisa – like a ghost
+            "घबराया हुआ",      # ghabraya hua – panicked
+            "रूह काँप गई",     # rooh kaanp gayi – soul trembled
+            "खौफ़",            # khauf – terror
+        ],
+    },
+    "disgust": {
+        "en": [
+            "disgusting", "gross", "revolting", "nasty", "yuck", "repulsed",
+            "nauseating", "horrible", "repulsive", "filthy", "foul", "loathe",
+            "abhorrent", "putrid", "vile", "sickening", "offensive", "stink",
+        ],
+        "bn": [
+            "ঘেন্না লাগছে",   # ghenna lagche – feeling disgusted
+            "বিরক্তিকর",       # birktikar – disgusting
+            "নোংরা",           # nongra – filthy
+            "বাজে",            # baje – awful/bad
+            "অসহ্য গন্ধ",     # asahya gondho – unbearable smell
+            "ছি ছি",           # chhi chhi – ugh/yuck
+            "জঘন্য",           # jaghonyo – heinous/disgusting
+            "বমি পাচ্ছে",      # bomi pachhe – feeling like vomiting
+            "ঘৃণা",            # ghrina – hatred/revulsion
+            "অরুচিকর",         # oruchikor – distasteful
+            "ভয়াবহ",          # bhoyaboho – horrible
+            "কুৎসিত",          # kutsit – ugly/repulsive
+            "দুর্গন্ধ",        # durgondho – foul smell
+            "বীভৎস",           # bibhotso – grotesque
+            "ঘৃণ্য",           # ghrinyo – repugnant
+        ],
+        "hi": [
+            "घिनौना",          # ghinauna – disgusting
+            "बेकार",           # bekaar – useless/awful
+            "गंदा",            # ganda – dirty/filthy
+            "उल्टी आ रही",    # ulti aa rahi – feeling like vomiting
+            "घृणा",            # ghrina – revulsion
+            "बदबूदार",         # badbudaar – stinking
+            "भयानक",           # bhayanak – horrible
+            "नफ़रत",           # nafrat – loathing
+            "छी छी",           # chhi chhi – yuck
+            "गंदगी",           # gandagi – filth
+            "वाहियात",         # waahiyaat – disgusting/worthless
+            "बकवास",           # bakwaas – nonsense/awful
+            "जुगुप्सा",        # jugupsa – disgust
+            "घिन",             # ghin – revulsion
+            "बेहूदा",          # behooda – absurd/repulsive
+        ],
+    },
+    "surprise": {
+        "en": [
+            "surprised", "shocked", "astonished", "amazed", "unexpected", "wow",
+            "unbelievable", "incredible", "stunning", "remarkable", "astounded",
+            "speechless", "gasp", "mind-blowing", "extraordinary", "whoa", "omg",
+        ],
+        "bn": [
+            "অবাক",            # obak – surprised
+            "আশ্চর্য",         # ashchoryo – astonished
+            "অবিশ্বাস্য",      # obishwasyo – unbelievable
+            "চমকে গেছি",       # chomke gechi – startled
+            "এটা কী করে সম্ভব", # eta ki kore shombhob – how is this possible
+            "অদ্ভুত",          # odbhut – strange/unexpected
+            "হতবাক",           # hotobak – speechless
+            "বিস্মিত",         # bismit – amazed
+            "চমৎকার",          # chomotkar – wonderful/astonishing
+            "অপ্রত্যাশিত",     # oprottashit – unexpected
+            "অকল্পনীয়",       # okalponiyo – unimaginable
+            "আরে বাবা",        # are baba – oh my goodness
+            "কী আশ্চর্য",      # ki ashchoryo – how surprising
+            "বিষ্ময়",          # bishmoyo – amazement
+            "থমকে গেছি",       # thomke gechi – stunned
+        ],
+        "hi": [
+            "हैरान",           # hairaan – surprised
+            "चौंक गया",        # chaunk gaya – startled
+            "अविश्वसनीय",     # avishvasneey – unbelievable
+            "अरे वाह",         # are waah – oh wow
+            "क्या बात है",     # kya baat hai – what a thing
+            "अचंभा",           # achambha – astonishment
+            "दंग रह गया",      # dang reh gaya – stunned
+            "सच में",          # sach mein – really?
+            "यकीन नहीं होता", # yakeen nahi hota – can't believe it
+            "ओह माय गॉड",     # oh my god
+            "कमाल है",         # kamaal hai – amazing
+            "अजीब",            # ajeeb – strange/unexpected
+            "विस्मय",          # vismay – wonder
+            "हक्का बक्का",     # hakka bakka – dumbfounded
+            "अप्रत्याशित",    # apratyashit – unexpected
+        ],
+    },
+}
+
+# Flatten LANG_DICT into MULTILANG_PHRASES for detection engine
+# (combines Bengali script + Hindi script + romanised Hinglish phrases)
+_HINGLISH_EXTRA = {
+    "joy":      ["bahut maza", "kitna maza", "maja aa gaya", "full masti",
+                 "dil khush", "ek number", "bhai wah", "acha lag raha", "bohot khushi"],
+    "anger":    ["bahut gussa", "bura lag raha", "kuch nahi chahiye", "bohot bura",
+                 "chup raho", "teri toh", "faltu baat", "kya bakwas", "dimag mat kha"],
+    "sadness":  ["bahut dukh", "rona aa raha", "dil toot gaya", "ek dum sad",
+                 "kuch nahi ho raha", "akele hain", "bahut bura lag raha"],
+    "fear":     ["bahut dar lag raha", "dar gaya", "dara hua", "bhoot jaisa",
+                 "itna darna", "andhera"],
+    "disgust":  ["chhi chhi", "yuck yaar", "kya bakwas hai", "bilkul pasand nahi",
+                 "ganda hai", "ulti aa rahi"],
+    "surprise": ["arre wah", "yaar kya baat", "sach mein", "aisa kaise",
+                 "oh my god yaar", "kya hua", "kitni badi baat"],
+}
+
 MULTILANG_PHRASES = {
-    "joy": [
-        "bahut maza", "kitna maza", "so happy", "bohot khushi", "maja aa gaya",
-        "full masti", "dil khush", "ek number", "bhai wah", "acha lag raha",
-        "\u0985\u09a8\u09c7\u0995 \u09ae\u099c\u09be",  # অনেক মজা
-        "\u0996\u09c1\u09ac \u09ad\u09be\u09b2\u09cb",  # খুব ভালো
-        "\u0986\u09a8\u09a8\u09cd\u09a6",               # আনন্দ
-        "\u09b9\u09be\u09b8\u09bf",                     # হাসি
-        "\u09a6\u09be\u09b0\u09c1\u09a3",               # দারুণ
-    ],
-    "anger": [
-        "bahut gussa", "bura lag raha", "kuch nahi chahiye", "bohot bura",
-        "chup raho", "teri toh", "faltu baat", "kya bakwas", "dimag mat kha",
-        "\u09b0\u09be\u0997 \u09b9\u099a\u09cd\u099b\u09c7",  # রাগ হচ্ছে
-        "\u0996\u09c1\u09ac \u09b0\u09be\u0997",              # খুব রাগ
-        "\u09ac\u09bf\u09b0\u0995\u09cd\u09a4",               # বিরক্ত
-        "\u0998\u09c7\u09a8\u09cd\u09a8\u09be",               # ঘেন্না
-    ],
-    "sadness": [
-        "bahut dukh", "rona aa raha", "dil toot gaya", "ek dum sad",
-        "kuch nahi ho raha", "akele hain", "bahut bura lag raha",
-        "\u0995\u09be\u09a8\u09cd\u09a8\u09be \u09aa\u09be\u099a\u09cd\u099b\u09c7",  # কান্না পাচ্ছে
-        "\u0996\u09c1\u09ac \u0995\u09b7\u09cd\u099f",                                # খুব কষ্ট
-        "\u09ae\u09a8 \u0996\u09be\u09b0\u09be\u09aa",                                # মন খারাপ
-        "\u09a6\u09c1\u0983\u0996",                                                    # দুঃখ
-    ],
-    "fear": [
-        "bahut dar lag raha", "dar gaya", "dara hua", "bhoot jaisa",
-        "itna darna", "andhera",
-        "\u09ad\u09df \u09b2\u09be\u0997\u099b\u09c7",    # ভয় লাগছে
-        "\u09ad\u09df \u09aa\u09be\u099a\u09cd\u099b\u09bf",  # ভয় পাচ্ছি
-        "\u09ad\u09df\u0982\u0995\u09b0",                  # ভয়ংকর
-    ],
-    "disgust": [
-        "chhi chhi", "yuck yaar", "kya bakwas hai", "bilkul pasand nahi",
-        "ganda hai", "ulti aa rahi",
-        "\u0998\u09c7\u09a8\u09cd\u09a8\u09be \u09b2\u09be\u0997\u099b\u09c7",  # ঘেন্না লাগছে
-        "\u09ac\u09be\u099c\u09c7",                                                # বাজে
-    ],
-    "surprise": [
-        "arre wah", "yaar kya baat", "sach mein", "aisa kaise", "oh my god yaar",
-        "kya hua", "kitni badi baat",
-        "\u0985\u09ac\u09be\u0995",       # অবাক
-        "\u0986\u09b6\u09cd\u099a\u09b0\u09cd\u09af",  # আশ্চর্য
-        "\u0985\u09ac\u09bf\u09b6\u09cd\u09ac\u09be\u09b8\u09cd\u09af",  # অবিশ্বাস্য
-    ],
+    emotion: (
+        LANG_DICT[emotion]["bn"]
+        + LANG_DICT[emotion]["hi"]
+        + _HINGLISH_EXTRA[emotion]
+    )
+    for emotion in LANG_DICT
 }
 
 EMOTION_EMOJIS = {
@@ -608,6 +840,18 @@ textarea:focus {
     box-shadow: 0 8px 30px rgba(124,58,237,.7) !important;
 }
 
+/* ── Expander dark theme ── */
+[data-testid="stExpander"] {
+    background: rgba(255,255,255,.03) !important;
+    border: 1px solid rgba(168,85,247,.3) !important;
+    border-radius: 12px !important;
+}
+[data-testid="stExpander"] summary {
+    color: #c4b5fd !important;
+    font-family: 'Raleway', sans-serif !important;
+    font-size: .95rem !important;
+}
+
 /* ── Hide Streamlit chrome ── */
 #MainMenu, footer, [data-testid="stDecoration"] { display: none !important; }
 </style>
@@ -730,5 +974,135 @@ if reveal:
             {tag}
         </p>
         """, unsafe_allow_html=True)
+
+        # ── Three-language dictionary panel ───────────────────────────────────
+        st.markdown('<hr class="mystic-divider">', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="section-label" style="text-align:center;">'
+            '✦ Emotion Dictionary ✦ English · বাংলা · हिंदी</p>',
+            unsafe_allow_html=True,
+        )
+
+        d_color = EMOTION_COLORS[dominant]
+        d_entry = LANG_DICT[dominant]
+
+        # Build a 3-column word-chip layout
+        def _chips(words: list, chip_color: str) -> str:
+            chips = "".join(
+                f'<span style="display:inline-block; margin:3px 4px; padding:4px 10px;'
+                f'border-radius:999px; font-size:.78rem; font-weight:600;'
+                f'background:{chip_color}22; border:1px solid {chip_color}55;'
+                f'color:#f0e6ff; font-family:\'Raleway\',sans-serif;">'
+                f'{w}</span>'
+                for w in words
+            )
+            return chips
+
+        lang_labels = {"en": "🇬🇧 English", "bn": "🇧🇩 বাংলা", "hi": "🇮🇳 हिंदी"}
+
+        col_en, col_bn, col_hi = st.columns(3)
+        for col, lang_key in zip([col_en, col_bn, col_hi], ["en", "bn", "hi"]):
+            with col:
+                words  = d_entry[lang_key]
+                chips  = _chips(words, d_color)
+                st.markdown(f"""
+                <div style="background:rgba(255,255,255,.03);
+                            border:1px solid {d_color}33;
+                            border-radius:14px; padding:12px 10px;
+                            min-height:200px;">
+                    <p style="font-family:'Cinzel Decorative',serif;
+                               font-size:.72rem; letter-spacing:.15em;
+                               color:{d_color}; text-align:center;
+                               margin-bottom:8px; text-transform:uppercase;">
+                        {lang_labels[lang_key]}
+                    </p>
+                    <div style="text-align:center; line-height:2;">
+                        {chips}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Also show a compact table of all emotions × all 3 languages
+        st.markdown('<hr class="mystic-divider">', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="section-label" style="text-align:center;">'
+            '✦ Full Emotion Lexicon ✦</p>',
+            unsafe_allow_html=True,
+        )
+
+        # Build pandas DataFrame for the full table
+        table_rows = []
+        for emo in EMOTIONS:
+            ec  = EMOTION_COLORS[emo]
+            ee  = EMOTION_EMOJIS[emo]
+            row = {
+                "Emotion":  f"{ee} {emo.capitalize()}",
+                "English":  " · ".join(LANG_DICT[emo]["en"][:5]),
+                "বাংলা":    " · ".join(LANG_DICT[emo]["bn"][:5]),
+                "हिंदी":    " · ".join(LANG_DICT[emo]["hi"][:5]),
+            }
+            table_rows.append(row)
+
+        df_table = pd.DataFrame(table_rows)
+
+        # Render as a styled HTML table (no st.dataframe to preserve dark theme)
+        header_cells = "".join(
+            f'<th style="padding:8px 12px; text-align:left; '
+            f'color:#c4b5fd; font-family:\'Cinzel Decorative\',serif; '
+            f'font-size:.72rem; letter-spacing:.12em; border-bottom:1px solid rgba(168,85,247,.3);">'
+            f'{col}</th>'
+            for col in df_table.columns
+        )
+
+        body_rows_html = ""
+        for i, row in df_table.iterrows():
+            emo_key = EMOTIONS[i]
+            rc      = EMOTION_COLORS[emo_key]
+            cells   = "".join(
+                f'<td style="padding:7px 12px; font-size:.8rem; '
+                f'color:#e2d9f3; font-family:\'Raleway\',sans-serif; '
+                f'border-bottom:1px solid rgba(255,255,255,.05);">{v}</td>'
+                for v in row.values
+            )
+            body_rows_html += (
+                f'<tr style="background:{rc}0d;">{cells}</tr>'
+            )
+
+        st.markdown(f"""
+        <div style="overflow-x:auto; border-radius:12px;
+                    border:1px solid rgba(168,85,247,.25);
+                    background:rgba(255,255,255,.03);">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead><tr>{header_cells}</tr></thead>
+                <tbody>{body_rows_html}</tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ── Always-visible expander: full dictionary reference ────────────────────────
+with st.expander("📖 Browse the Full 3-Language Emotion Dictionary"):
+    for emo in EMOTIONS:
+        ec = EMOTION_COLORS[emo]
+        ee = EMOTION_EMOJIS[emo]
+        st.markdown(
+            f'<p style="font-family:\'Cinzel Decorative\',serif; '
+            f'font-size:.9rem; color:{ec}; margin:1rem 0 .3rem;">'
+            f'{ee} {emo.upper()}</p>',
+            unsafe_allow_html=True,
+        )
+        c1, c2, c3 = st.columns(3)
+        for col, lang_key, flag in [
+            (c1, "en", "🇬🇧 English"),
+            (c2, "bn", "🇧🇩 বাংলা"),
+            (c3, "hi", "🇮🇳 हिंदी"),
+        ]:
+            with col:
+                words_md = "\n".join(f"- {w}" for w in LANG_DICT[emo][lang_key])
+                st.markdown(
+                    f'<p style="font-size:.75rem; color:#a78bfa; '
+                    f'font-weight:700; margin-bottom:4px;">{flag}</p>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown(words_md)
 
 st.markdown('</div>', unsafe_allow_html=True)   # close .main-wrapper
